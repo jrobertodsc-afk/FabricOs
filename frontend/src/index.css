@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-dark-bg: #0A0B10;
+  --color-dark-card: #12141C;
+  --color-dark-border: #1F2230;
+  --color-dark-dim: #94A3B8;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+
+  --font-inter: "Inter", sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+
+  --shadow-primary: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+}
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-white font-inter antialiased;
+  }
+  
+  ::placeholder {
+    @apply text-dark-dim/80 !important;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-dark-card border border-dark-border/60 p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:border-dark-border transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-br from-primary to-primary-hover text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-primary active:scale-[0.98] hover:scale-[1.02];
+  }
+  
+  .btn-secondary {
+    @apply bg-dark-border/30 hover:bg-dark-border/50 text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-sm border border-dark-border/50;
+  }
+  
+  .input-field {
+    @apply w-full bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none text-sm transition-all;
+  }
+
+  .table-header {
+    @apply bg-white/[0.03] text-dark-dim text-[10px] uppercase font-black tracking-[0.15em] border-b border-dark-border;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}

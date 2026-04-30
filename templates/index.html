@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Retiradas | Produção</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ph-bold ph-package"></i>
+                <span>Produção</span>
+            </div>
+            <nav>
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="ph-bold ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="history">
+                    <i class="ph-bold ph-clock-counter-clockwise"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="#" class="nav-item" data-view="reports">
+                    <i class="ph-bold ph-chart-bar"></i>
+                    <span>Relatórios</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>ComAgente ERP</p>
+                <span>v1.0.0</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar">
+                    <i class="ph-bold ph-magnifying-glass"></i>
+                    <input type="text" placeholder="Buscar peça ou pessoa...">
+                </div>
+                <button class="btn-primary" id="btn-new-withdrawal">
+                    <i class="ph-bold ph-plus"></i>
+                    Nova Retirada
+                </button>
+            </header>
+
+            <div id="dashboard-view" class="view">
+                <section class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon out">
+                            <i class="ph-bold ph-arrow-up-right"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Na Rua</span>
+                            <h2 id="stat-out">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon pending">
+                            <i class="ph-bold ph-warning"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Pendentes</span>
+                            <h2 id="stat-pending">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon returned">
+                            <i class="ph-bold ph-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Devolvido Hoje</span>
+                            <h2 id="stat-returned">0</h2>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="active-withdrawals">
+                    <div class="section-header">
+                        <h3>Peças na Rua</h3>
+                        <span class="badge" id="active-count">0 itens</span>
+                    </div>
+                    <div class="table-container">
+                        <table id="active-table">
+                            <thead>
+                                <tr>
+                                    <th>Foto</th>
+                                    <th>Peça / Referência</th>
+                                    <th>Qtd</th>
+                                    <th>Quem Retirou</th>
+                                    <th>Previsão</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="active-list">
+                                <!-- Dynamic items -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state" class="empty-state hidden">
+                            <i class="ph-bold ph-ghost"></i>
+                            <p>Nenhuma peça na rua no momento.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="history-view" class="view hidden">
+                <section class="history-list">
+                    <div class="section-header">
+                        <h3>Histórico de Movimentações</h3>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Peça</th>
+                                    <th>Qtd</th>
+                                    <th>Pessoa</th>
+                                    <th>Data Saída</th>
+                                    <th>Data Retorno</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-list-body">
+                                <!-- Dynamic items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div id="reports-view" class="view hidden">
+                <section class="reports-section">
+                    <div class="section-header">
+                        <h3>Relatórios e Pendências</h3>
+                    </div>
+
+                    <!-- Filtros de Relatório -->
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label>Tipo</label>
+                            <select id="filter-type">
+                                <option value="all">Todos</option>
+                                <option value="interno">Interno</option>
+                                <option value="faccionista">Faccionista</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Situação</label>
+                            <select id="filter-status">
+                                <option value="pendente">Pendências (Na Rua)</option>
+                                <option value="devolvido">Devoluções (Finalizados)</option>
+                                <option value="all">Tudo</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Período</label>
+                            <select id="filter-period">
+                                <option value="all">Sempre</option>
+                                <option value="week">Esta Semana</option>
+                                <option value="month">Este Mês</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="reports-grid">
+                        <div class="report-card" id="report-pending-7">
+                            <span class="report-alert alert-7">7+ Dias</span>
+                            <h4 id="count-7">0</h4>
+                            <p>Peças fora há mais de uma semana</p>
+                        </div>
+                        <div class="report-card" id="report-pending-15">
+                            <span class="report-alert alert-15">15+ Dias</span>
+                            <h4 id="count-15">0</h4>
+                            <p>Peças fora há mais de 15 dias</p>
+                        </div>
+                        <div class="report-card" id="report-pending-30">
+                            <span class="report-alert alert-30">30+ Dias</span>
+                            <h4 id="count-30">0</h4>
+                            <p>Peças críticas (30+ dias)</p>
+                        </div>
+                    </div>
+
+                    <div class="report-tables">
+                        <div class="table-container">
+                            <div class="table-header-custom">
+                                <h4 id="report-title">Resumo de Pendências</h4>
+                                <button class="btn-action" onclick="window.print()"><i class="ph-bold ph-printer"></i> Imprimir</button>
+                            </div>
+                            <table id="pending-report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Peça / Lote</th>
+                                        <th>Pessoa / Oficina</th>
+                                        <th>Qtd</th>
+                                        <th>Saída</th>
+                                        <th>Retorno</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pending-report-body">
+                                    <!-- Dynamic -->
+                                </tbody>
+                            </table>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button class="btn-secondary" onclick="exportToCSV()" style="font-size: 12px; background: transparent; border: 1px solid var(--border-color); color: var(--text-dim); padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer;">
+                                    <i class="ph-bold ph-file-csv"></i> Exportar para Excel (CSV)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Confirmar Devolução (NOVO) -->
+    <div id="modal-return" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar Devolução</h2>
+                <button class="btn-close-return"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="form-return">
+                <input type="hidden" name="return_id" id="return_id">
+                <div class="form-group">
+                    <label>Quantidade que está retornando agora</label>
+                    <input type="number" name="return_qty" id="return_qty_input" min="1" required>
+                    <small id="max_qty_label" style="color: var(--text-dim); font-size: 11px;"></small>
+                </div>
+                <div class="form-group">
+                    <label>Estado destas peças</label>
+                    <select name="return_status" required>
+                        <option value="ok">Tudo OK / Completo</option>
+                        <option value="defeito">Com Defeito / Avaria</option>
+                        <option value="parcial">Ficou Pendente (Parcial)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observações do Retorno</label>
+                    <textarea name="return_notes" rows="3" placeholder="Descreva o defeito ou o que falta..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary btn-close-return">Cancelar</button>
+                    <button type="submit" class="btn-primary">Confirmar Recebimento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nova Retirada -->
+    <div id="modal-withdrawal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Registrar Retirada</h2>
+                <button class="btn-close"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="form-withdrawal" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Retirada</label>
+                        <select name="type" id="select-type" required>
+                            <option value="interno">Interno (Foto/Evento)</option>
+                            <option value="faccionista">Faccionista (Produção)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome da Peça / Família / Lote</label>
+                        <input type="text" name="item_name" placeholder="Ex: Vestido Flora / OP 123" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Grade por Tamanho (Quantidade)</label>
+                    <div class="grade-inputs">
+                        <div class="grade-item"><label>PP</label><input type="number" name="size_pp" value="0" min="0"></div>
+                        <div class="grade-item"><label>P</label><input type="number" name="size_p" value="0" min="0"></div>
+                        <div class="grade-item"><label>M</label><input type="number" name="size_m" value="0" min="0"></div>
+                        <div class="grade-item"><label>G</label><input type="number" name="size_g" value="0" min="0"></div>
+                        <div class="grade-item"><label>GG</label><input type="number" name="size_gg" value="0" min="0"></div>
+                        <div class="grade-item"><label>U</label><input type="number" name="size_u" value="0" min="0"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade Total</label>
+                        <input type="number" name="quantity" id="total-quantity" value="0" readonly style="background: rgba(255,255,255,0.05)">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto / Comprovante</label>
+                        <input type="file" name="photo" accept="image/*" class="file-input">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome (Pessoa ou Faccionista)</label>
+                        <input type="text" name="person_name" placeholder="Ex: Oficina da Maria" required>
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp (com DDD)</label>
+                        <input type="text" name="phone_number" placeholder="Ex: 11999998888">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Destino / Local</label>
+                        <input type="text" name="destination" placeholder="Ex: Estúdio 42 / Evento SP">
+                    </div>
+                    <div class="form-group">
+                        <label>Previsão de Retorno</label>
+                        <input type="date" name="expected_return">
+                    </div>
+                </div>
+                    <div class="form-group">
+                        <label>Motivo / Categoria</label>
+                        <select name="reason" required>
+                            <option value="">Selecione</option>
+                            <option value="Interno">Interno (Foto/Evento)</option>
+                            <option value="Faccionista">Faccionista (Produção)</option>
+                            <option value="Conserto">Conserto</option>
+                            <option value="Recall">Recall</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea name="notes" rows="2" placeholder="Detalhes adicionais..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary btn-close">Cancelar</button>
+                    <button type="submit" class="btn-primary">Confirmar Retirada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.1"></script>
+</body>
+</html>

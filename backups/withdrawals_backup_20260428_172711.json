@@ -1,0 +1,51 @@
+[
+    {
+        "id": "0ca1769f-4ab5-4911-b630-2434a3abcda3",
+        "item_name": "CROPPED",
+        "person_name": "SIMONE",
+        "phone_number": "",
+        "reason": "Faccionista",
+        "type": "faccionista",
+        "quantity": "5",
+        "family": "",
+        "destination": "PRODUÇÃO EXTERNA",
+        "expected_return": "2026-05-30",
+        "notes": "Part de 60 devolvida como parcial",
+        "sizes": {
+            "PP": "15",
+            "P": "20",
+            "M": "30",
+            "G": "0",
+            "GG": "0",
+            "U": "0"
+        },
+        "status": "pendente",
+        "created_at": "2026-04-28 17:20:21"
+    },
+    {
+        "id": "a4703e4d-f6ea-4cae-8a48-699a8884def8",
+        "item_name": "CROPPED",
+        "person_name": "SIMONE",
+        "phone_number": "",
+        "reason": "Faccionista",
+        "type": "faccionista",
+        "quantity": "60",
+        "family": "",
+        "destination": "PRODUÇÃO EXTERNA",
+        "expected_return": "2026-05-30",
+        "notes": "",
+        "sizes": {
+            "PP": "15",
+            "P": "20",
+            "M": "30",
+            "G": "0",
+            "GG": "0",
+            "U": "0"
+        },
+        "status": "devolvido",
+        "created_at": "2026-04-28 17:20:21",
+        "return_detail": "parcial",
+        "return_notes": "RETORNO AJUSTES",
+        "returned_at": "2026-04-28 17:20:52"
+    }
+]
