@@ -52,7 +52,11 @@ app.include_router(notifications.router)
 # O Central Backoffice de licenciamento só é exposto se NÃO estiver em produção estrita
 if os.getenv("FABRICOS_MODE") != "production":
     app.include_router(backoffice_server.router)
-
+# ---- Eventos de Inicialização ----
+@app.on_event("startup")
+async def startup_event():
+    from backend.app.core.init_db import auto_initialize_db
+    await auto_initialize_db()
 
 
 # ---- Handler Global de Erros ----
