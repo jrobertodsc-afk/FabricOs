@@ -1,4 +1,4 @@
-# Stage 1: Build the frontend
+# Stage 1: Build the frontend (Force rebuild)
 FROM node:20-slim AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
