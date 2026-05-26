@@ -20,10 +20,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado ou inválido — limpa sessão e redireciona para login
-      localStorage.removeItem('fabricos_token');
-      localStorage.removeItem('fabricos_tenant_id');
-      window.location.href = '/login';
+      // Evita redirecionar para o login de operadores se for uma requisição do Backoffice Central
+      const isBackofficeRequest = error.config?.url?.includes('/api/backoffice');
+      if (!isBackofficeRequest) {
+        localStorage.removeItem('fabricos_token');
+        localStorage.removeItem('fabricos_tenant_id');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
