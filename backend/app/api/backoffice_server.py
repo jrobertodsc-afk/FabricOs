@@ -109,7 +109,7 @@ def get_client_license_state(tenant_id: str) -> dict:
         db_data[tenant_id] = {
             "tenant_id": tenant_id,
             "client_name": f"Cliente Filial {tenant_id[:8].upper()}",
-            "enabled_modules": ["producao", "logistica", "mobile"],
+            "enabled_modules": ["producao"],
             "update_channel": "stable",
             "current_version": "1.0.0",
             "latest_version": "1.0.0",
