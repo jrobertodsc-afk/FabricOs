@@ -10,10 +10,6 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
-# Instala dependencias do sistema
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copia e instala requisitos do Python
 COPY backend/requirements.txt .
