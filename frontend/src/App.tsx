@@ -21,8 +21,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function AppContent() {
   const { isLocked, errorMessage, loading } = useLicense();
-  const isProd = import.meta.env.VITE_FABRICOS_MODE === 'production';
-  const isBackoffice = !isProd && window.location.pathname.startsWith('/backoffice');
+  const isBackoffice = window.location.pathname.startsWith('/backoffice');
 
   if (loading) {
     return (
@@ -57,10 +56,8 @@ function AppContent() {
         <Route path="/portal/:token" element={<PartnerPortal />} />
         <Route path="/track/:code" element={<TrackWithdrawal />} />
 
-        {/* Backoffice Route - Oculto em produção estrita comercial */}
-        {import.meta.env.VITE_FABRICOS_MODE !== 'production' && (
-          <Route path="/backoffice" element={<BackofficeDashboard />} />
-        )}
+        {/* Backoffice Route - Seguro por Token de Admin e isolamento no Backend */}
+        <Route path="/backoffice" element={<BackofficeDashboard />} />
       </Routes>
     </BrowserRouter>
   );
