@@ -1,5 +1,13 @@
-FROM python:3.12-slim
+# Stage 1: Build the frontend
+FROM node:20-slim AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
+# Stage 2: Run the python backend
+FROM python:3.12-slim
 WORKDIR /app
 
 # Instala dependencias do sistema
@@ -11,9 +19,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o codigo do backend e os arquivos estaticos compilados do frontend
+# Copia o codigo do backend
 COPY backend/ /app/backend/
-COPY frontend/dist /app/frontend/dist
+
+# Copia os arquivos estaticos compilados do frontend do stage de build
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 # =============================================================================
 # RAILWAY PERSISTENT VOLUME
