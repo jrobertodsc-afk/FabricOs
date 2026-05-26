@@ -9,7 +9,8 @@ import type { BackofficeClient } from '../services/api';
 import { 
   Lock, LockOpen, ArrowClockwise, HardDrives, 
   ShieldCheck, CheckSquare, Square,
-  ChartLineUp, MonitorPlay, Sparkle, Tag, WarningCircle
+  ChartLineUp, MonitorPlay, Sparkle, Tag, WarningCircle,
+  PencilSimpleLine, Check, X
 } from '@phosphor-icons/react';
 import { useToast } from '../contexts/ToastContext';
 
@@ -19,6 +20,22 @@ const BackofficeDashboard: React.FC = () => {
   const [authorized, setAuthorized] = useState(true);
   const [password, setPassword] = useState("");
   const { addToast } = useToast();
+  const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
+
+  const handleSaveName = async (tenantId: string) => {
+    if (!editNameValue.trim()) return;
+    try {
+      const updated = await updateClientLicense(tenantId, {
+        client_name: editNameValue.trim()
+      });
+      addToast(`Nome do cliente atualizado com sucesso!`, "success");
+      setClients(prev => prev.map(c => c.tenant_id === tenantId ? updated : c));
+      setEditingTenantId(null);
+    } catch (error) {
+      addToast("Erro ao renomear cliente.", "error");
+    }
+  };
 
   const loadClients = async () => {
     setLoading(true);
@@ -266,9 +283,51 @@ const BackofficeDashboard: React.FC = () => {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-dark-border/40 pb-6 mb-6">
                   <div>
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="text-xl font-bold font-outfit text-white">
-                        {client.client_name}
-                      </h2>
+                      {editingTenantId === client.tenant_id ? (
+                        <div className="flex items-center gap-2 bg-[#0d0e15] border border-primary/40 rounded-lg px-2 py-1">
+                          <input
+                            type="text"
+                            value={editNameValue}
+                            onChange={(e) => setEditNameValue(e.target.value)}
+                            className="bg-transparent border-none text-white text-sm font-bold focus:outline-none focus:ring-0 w-48"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveName(client.tenant_id);
+                              if (e.key === 'Escape') setEditingTenantId(null);
+                            }}
+                          />
+                          <button
+                            onClick={() => handleSaveName(client.tenant_id)}
+                            className="text-success hover:text-success/80 transition-colors p-1"
+                            title="Salvar"
+                          >
+                            <Check size={16} weight="bold" />
+                          </button>
+                          <button
+                            onClick={() => setEditingTenantId(null)}
+                            className="text-danger hover:text-danger/80 transition-colors p-1"
+                            title="Cancelar"
+                          >
+                            <X size={16} weight="bold" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group">
+                          <h2 className="text-xl font-bold font-outfit text-white">
+                            {client.client_name}
+                          </h2>
+                          <button
+                            onClick={() => {
+                              setEditingTenantId(client.tenant_id);
+                              setEditNameValue(client.client_name);
+                            }}
+                            className="text-dark-dim hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 p-1"
+                            title="Editar nome"
+                          >
+                            <PencilSimpleLine size={16} weight="bold" />
+                          </button>
+                        </div>
+                      )}
                       <span className="text-[9px] font-mono bg-dark-bg border border-dark-border px-2 py-0.5 rounded text-white/50">
                         UUID: {client.tenant_id}
                       </span>

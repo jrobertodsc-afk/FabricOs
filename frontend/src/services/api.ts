@@ -977,7 +977,7 @@ export const toggleClientLock = async (tenantId: string) => {
   return response.data;
 };
 
-export const updateClientLicense = async (tenantId: string, data: { enabled_modules?: string[]; update_channel?: string; is_active?: boolean }) => {
+export const updateClientLicense = async (tenantId: string, data: { client_name?: string; enabled_modules?: string[]; update_channel?: string; is_active?: boolean }) => {
   const response = await api.patch<BackofficeClient>(`/api/backoffice/clients/${tenantId}`, data, getBackofficeHeaders());
   return response.data;
 };

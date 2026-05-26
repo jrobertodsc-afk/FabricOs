@@ -98,6 +98,7 @@ class LicenseValidationRequest(BaseModel):
     license_key: Optional[str] = None
 
 class LicenseUpdateRequest(BaseModel):
+    client_name: Optional[str] = None
     enabled_modules: Optional[List[str]] = None
     update_channel: Optional[str] = None
     is_active: Optional[bool] = None
@@ -189,6 +190,8 @@ async def update_client_license(tenant_id: str, payload: LicenseUpdateRequest, a
     else:
         state = db_data[tenant_id]
         
+    if payload.client_name is not None:
+        state["client_name"] = payload.client_name
     if payload.enabled_modules is not None:
         state["enabled_modules"] = payload.enabled_modules
     if payload.update_channel is not None:
