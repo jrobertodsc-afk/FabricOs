@@ -29,9 +29,8 @@ AwIDAQAB
 
 ALGORITHM = "RS256"
 
-# URL do Servidor Central Backoffice Simulado
-# No setup real, aponta para https://backoffice.fabricos.com
-CENTRAL_BACKOFFICE_URL = "http://127.0.0.1:8000/api/backoffice"
+# URL do Servidor Central Backoffice
+CENTRAL_BACKOFFICE_URL = os.getenv("CENTRAL_BACKOFFICE_URL", "http://127.0.0.1:8000/api/backoffice")
 
 def get_private_key() -> Optional[str]:
     """Recupera a chave privada de forma dinâmica para auto-licenciamento em desenvolvimento."""
