@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Cookie, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -74,13 +74,41 @@ def save_central_db(data: dict):
     except Exception as e:
         print(f"Erro ao salvar banco de licenças central: {e}")
 
-def verify_admin_token(x_backoffice_admin_token: Optional[str] = Header(None)):
-    """Valida o token administrativo nas rotas de controle central."""
-    if not x_backoffice_admin_token or x_backoffice_admin_token != BACKOFFICE_ADMIN_TOKEN:
+def verify_admin_token(
+    x_backoffice_admin_token: Optional[str] = Header(None),
+    backoffice_session: Optional[str] = Cookie(None)
+):
+    """Valida o token administrativo nas rotas de controle central.
+    Aceita via header X-Backoffice-Admin-Token OU cookie backoffice_session."""
+    token = x_backoffice_admin_token or backoffice_session
+    if not token or token != BACKOFFICE_ADMIN_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Acesso negado: Senha administrativa incorreta ou ausente."
         )
+
+class BackofficeLoginRequest(BaseModel):
+    password: str
+
+@router.post("/login")
+async def backoffice_login(payload: BackofficeLoginRequest, response: Response):
+    """Endpoint de autenticação do Backoffice Central.
+    Valida a senha administrativa e define um cookie de sessão seguro."""
+    if payload.password != BACKOFFICE_ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Senha administrativa incorreta."
+        )
+    # Define cookie de sessão com validade de 24 horas
+    response.set_cookie(
+        key="backoffice_session",
+        value=BACKOFFICE_ADMIN_TOKEN,
+        max_age=86400,  # 24 horas
+        httponly=False,
+        samesite="lax",
+        path="/"
+    )
+    return {"success": True, "message": "Autenticado com sucesso no Backoffice Central."}
 
 def create_backoffice_license_token(tenant_id: str, client_name: str, enabled_modules: List[str], expires_in_days: int = 30) -> str:
     """Helper no Backoffice para gerar chaves de licença assimétricas assinadas com a chave privada RSA."""

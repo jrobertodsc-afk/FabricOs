@@ -968,6 +968,11 @@ const getBackofficeHeaders = () => {
   };
 };
 
+export const backofficeLogin = async (password: string) => {
+  const response = await api.post('/api/backoffice/login', { password }, { withCredentials: true });
+  return response.data;
+};
+
 export const getBackofficeClients = async () => {
   const response = await api.get<BackofficeClient[]>('/api/backoffice/clients', getBackofficeHeaders());
   return response.data;

@@ -3,7 +3,8 @@ import {
   getBackofficeClients, 
   toggleClientLock, 
   updateClientLicense, 
-  simulateLocalUpdate
+  simulateLocalUpdate,
+  backofficeLogin
 } from '../services/api';
 import type { BackofficeClient } from '../services/api';
 import { 
@@ -65,10 +66,16 @@ const BackofficeDashboard: React.FC = () => {
     }
   }, []);
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('backoffice_admin_token', password);
-    loadClients();
+    try {
+      await backofficeLogin(password);
+      // Cookie foi definido automaticamente pelo browser
+      localStorage.setItem('backoffice_admin_token', password);
+      await loadClients();
+    } catch (error: any) {
+      addToast("Senha administrativa incorreta.", "error");
+    }
   };
 
   const handleToggleLock = async (tenantId: string) => {
