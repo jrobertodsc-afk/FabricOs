@@ -110,6 +110,21 @@ async def backoffice_login(payload: BackofficeLoginRequest, response: Response):
     )
     return {"success": True, "message": "Autenticado com sucesso no Backoffice Central."}
 
+@router.get("/health")
+async def backoffice_health():
+    """Endpoint de diagnóstico do Backoffice Central (sem autenticação)."""
+    is_custom_token = os.getenv("BACKOFFICE_ADMIN_TOKEN") is not None
+    token_len = len(BACKOFFICE_ADMIN_TOKEN)
+    token_hint = BACKOFFICE_ADMIN_TOKEN[:2] + "*" * (token_len - 2) if token_len > 2 else "**"
+    return {
+        "status": "ok",
+        "fabricos_mode": os.getenv("FABRICOS_MODE", "not set"),
+        "custom_admin_token_configured": is_custom_token,
+        "admin_token_hint": token_hint,
+        "admin_token_length": token_len,
+        "db_file": DB_FILE
+    }
+
 def create_backoffice_license_token(tenant_id: str, client_name: str, enabled_modules: List[str], expires_in_days: int = 30) -> str:
     """Helper no Backoffice para gerar chaves de licença assimétricas assinadas com a chave privada RSA."""
     payload = {
