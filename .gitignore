@@ -1,8 +1,6 @@
-# Node.js
-node_modules/
-dist/
-build/
-.env
+# Node.js — ignora apenas dentro do frontend, MAS mantém frontend/dist para o Railway
+frontend/node_modules/
+# NÃO ignoramos frontend/dist pois o Railway precisa dele para servir a interface
 
 # Python
 __pycache__/
@@ -12,9 +10,16 @@ venv/
 env/
 .env
 
-# Database
+# Database — não sobe bancos locais
 *.db
 *.sqlite3
+
+# Logs gerados localmente
+*.log
+backend_*.log
+
+# Uploads / dados gerados em runtime (Railway usa /data via volume)
+backend/app/uploads/
 
 # IDEs
 .vscode/
@@ -26,5 +31,6 @@ Thumbs.db
 
 # Gemini / Antigravity
 .gemini/
-fabric_audit.log
-fabricos_audit.log
+FabricOS-Enterprise/
+backups/
+*.exe

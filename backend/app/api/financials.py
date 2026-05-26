@@ -12,45 +12,7 @@ from backend.app.api.deps import get_current_tenant_id
 
 router = APIRouter(prefix="/api/financials", tags=["Financials"])
 
-@router.post("/settlements", response_model=schemas.Settlement)
-async def create_settlement(
-    settlement_in: schemas.SettlementCreate,
-    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
-    db: AsyncSession = Depends(get_db)
-):
-    await set_tenant_id(db, str(tenant_id))
-    
-    # Fetch the order to get details
-    query = select(models.ProductionOrder).where(
-        models.ProductionOrder.id == settlement_in.order_id,
-        models.ProductionOrder.tenant_id == tenant_id
-    )
-    result = await db.execute(query)
-    order = result.scalar_one_or_none()
-    
-    if not order:
-        raise HTTPException(status_code=404, detail="Production order not found")
-    
-    if not order.partner_id:
-        raise HTTPException(status_code=400, detail="Order is not assigned to a partner")
 
-    total_amount = order.total_quantity * order.price_per_piece
-    net_amount = total_amount - settlement_in.deductions
-    
-    new_settlement = models.Settlement(
-        tenant_id=tenant_id,
-        order_id=order.id,
-        partner_id=order.partner_id,
-        total_amount=total_amount,
-        deductions=settlement_in.deductions,
-        net_amount=net_amount,
-        status="pendente"
-    )
-    
-    db.add(new_settlement)
-    await db.commit()
-    await db.refresh(new_settlement)
-    return new_settlement
 
 @router.get("/settlements", response_model=List[schemas.Settlement])
 async def list_settlements(
@@ -65,3 +27,52 @@ async def list_settlements(
     
     result = await db.execute(query)
     return result.scalars().all()
+
+@router.patch("/settlements/{id}", response_model=schemas.Settlement)
+async def update_settlement(
+    id: uuid.UUID,
+    settlement_in: schemas.SettlementUpdate,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.Settlement).where(
+        models.Settlement.id == id,
+        models.Settlement.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    settlement = result.scalar_one_or_none()
+    if not settlement:
+        raise HTTPException(status_code=404, detail="Settlement not found")
+        
+    update_data = settlement_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(settlement, field, value)
+        
+    if "deductions" in update_data:
+        settlement.net_amount = settlement.total_amount - settlement.deductions
+        
+    await db.commit()
+    await db.refresh(settlement)
+    return settlement
+
+@router.get("/summary", response_model=schemas.FinancialSummary)
+async def get_financial_summary(
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    
+    query = select(models.Settlement).where(models.Settlement.tenant_id == tenant_id)
+    result = await db.execute(query)
+    settlements = result.scalars().all()
+    
+    total_payable = sum(s.net_amount for s in settlements if s.status.lower() == "pendente")
+    total_paid = sum(s.net_amount for s in settlements if s.status.lower() == "pago")
+    total_deductions = sum(s.deductions for s in settlements)
+    
+    return schemas.FinancialSummary(
+        total_payable=total_payable,
+        total_paid=total_paid,
+        total_deductions=total_deductions
+    )

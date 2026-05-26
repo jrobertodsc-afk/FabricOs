@@ -8,8 +8,9 @@ from backend.app.core.database import get_db, set_tenant_id
 from backend.app.models import models
 from backend.app.schemas import schemas
 from backend.app.api.deps import get_current_tenant_id
+from backend.app.core.license_middleware import verify_production_license
 
-router = APIRouter(prefix="/api/materials", tags=["Materials"])
+router = APIRouter(prefix="/api/materials", tags=["Materials"], dependencies=[Depends(verify_production_license)])
 
 @router.get("", response_model=List[schemas.Material])
 async def list_materials(
@@ -37,3 +38,79 @@ async def create_material(
     await db.commit()
     await db.refresh(new_material)
     return new_material
+
+@router.patch("/{id}", response_model=schemas.Material)
+async def update_material(
+    id: uuid.UUID,
+    material_in: schemas.MaterialUpdate,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.Material).where(
+        models.Material.id == id,
+        models.Material.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    material = result.scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+        
+    update_data = material_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(material, field, value)
+        
+    await db.commit()
+    await db.refresh(material)
+    return material
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_material(
+    id: uuid.UUID,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.Material).where(
+        models.Material.id == id,
+        models.Material.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    material = result.scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+        
+    await db.delete(material)
+    await db.commit()
+
+@router.post("/{id}/adjust", response_model=schemas.Material)
+async def adjust_material_stock(
+    id: uuid.UUID,
+    adjustment: schemas.StockAdjustment,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.Material).where(
+        models.Material.id == id,
+        models.Material.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    material = result.scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+        
+    if adjustment.type == "out":
+        if material.stock_quantity < adjustment.quantity:
+            raise HTTPException(status_code=400, detail="Insufficient stock")
+        material.stock_quantity -= adjustment.quantity
+    elif adjustment.type == "in":
+        material.stock_quantity += adjustment.quantity
+    else:
+        raise HTTPException(status_code=400, detail="Invalid adjustment type")
+        
+    # We could log the adjustment.reason somewhere if we had an audit log table
+    
+    await db.commit()
+    await db.refresh(material)
+    return material

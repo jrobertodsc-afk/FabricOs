@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Package, Plus, Ruler, ListChecks, ArrowLeft } from '@phosphor-icons/react';
-import { getProducts, getMaterials, createProduct, createMaterial } from '../services/api';
+import { Package, Plus, Ruler, ListChecks, ArrowLeft, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
+import { getProducts, getMaterials, createProduct, createMaterial, updateProduct, deleteProduct } from '../services/api';
 import type { Product, Material } from '../services/api';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../contexts/ToastContext';
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,6 +25,14 @@ const Products: React.FC = () => {
     unit: 'un',
     stock_quantity: 0
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  
+  const { addToast } = useToast();
 
   const loadData = async () => {
     try {
@@ -46,24 +56,65 @@ const Products: React.FC = () => {
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createProduct(newProduct);
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, newProduct);
+        addToast("Ficha Técnica atualizada com sucesso", "success");
+      } else {
+        await createProduct(newProduct);
+        addToast("Ficha Técnica cadastrada com sucesso", "success");
+      }
       setIsProductModalOpen(false);
+      setEditingProduct(null);
       setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [] });
       loadData();
     } catch (error) {
-      alert("Erro ao cadastrar produto");
+      addToast(editingProduct ? "Erro ao atualizar ficha técnica" : "Erro ao cadastrar ficha técnica", "error");
     }
   };
+
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      await deleteProduct(productToDelete.id);
+      addToast("Ficha Técnica excluída com sucesso", "success");
+      setIsDeleteOpen(false);
+      setProductToDelete(null);
+      loadData();
+    } catch (error) {
+      addToast("Erro ao excluir ficha técnica", "error");
+    }
+  };
+
+  const openEdit = (product: Product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      reference: product.reference,
+      name: product.name,
+      description: product.description || '',
+      base_price: product.base_price,
+      materials: product.materials.map(m => ({
+        material_id: m.material_id,
+        quantity: m.quantity
+      }))
+    });
+    setIsProductModalOpen(true);
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.reference.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleCreateMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createMaterial(newMaterial);
+      addToast("Insumo cadastrado com sucesso", "success");
       setIsMaterialModalOpen(false);
       setNewMaterial({ name: '', unit: 'un', stock_quantity: 0 });
       loadData();
     } catch (error) {
-      alert("Erro ao cadastrar insumo");
+      addToast("Erro ao cadastrar insumo", "error");
     }
   };
 
@@ -81,12 +132,29 @@ const Products: React.FC = () => {
           <h1 className="text-2xl font-bold font-outfit">Produtos & Fichas Técnicas</h1>
           <p className="text-dark-dim">Cadastre seus modelos e os aviamentos necessários</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setIsMaterialModalOpen(true)} className="px-6 py-3 bg-white/5 border border-dark-border rounded-xl font-bold hover:bg-white/10 transition-colors flex items-center gap-2">
+        <div className="flex gap-4 items-center">
+          <div className="relative">
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-dim" size={18} />
+            <input 
+              type="text" 
+              placeholder="Buscar ficha técnica..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="bg-dark-bg border border-dark-border rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary transition-all w-64"
+            />
+          </div>
+          <button onClick={() => setIsMaterialModalOpen(true)} className="px-6 py-2 bg-white/5 border border-dark-border rounded-xl font-bold hover:bg-white/10 transition-colors flex items-center gap-2">
             <Ruler size={20} />
             Cadastrar Insumo
           </button>
-          <button onClick={() => setIsProductModalOpen(true)} className="btn-primary">
+          <button 
+            onClick={() => {
+              setEditingProduct(null);
+              setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [] });
+              setIsProductModalOpen(true);
+            }} 
+            className="btn-primary py-2"
+          >
             <Plus size={20} weight="bold" />
             Nova Ficha Técnica
           </button>
@@ -97,22 +165,40 @@ const Products: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <p>Carregando...</p>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="col-span-full card flex flex-col items-center py-20 gap-4">
               <ListChecks size={48} weight="thin" />
-              <p className="text-dark-dim">Nenhuma ficha técnica cadastrada.</p>
+              <p className="text-dark-dim">Nenhuma ficha técnica encontrada.</p>
             </div>
           ) : (
-            products.map(p => (
-              <div key={p.id} className="card group hover:border-primary/40 transition-all">
+            filteredProducts.map(p => (
+              <div key={p.id} className="card group hover:border-primary/40 transition-all flex flex-col">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="bg-primary/10 text-primary p-3 rounded-xl">
-                    <Package size={24} weight="bold" />
+                  {p.image_url ? (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-dark-border/60 bg-dark-bg">
+                      <img 
+                        src={p.image_url} 
+                        alt={p.name} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-primary/10 text-primary p-3 rounded-xl">
+                      <Package size={24} weight="bold" />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold bg-white/5 px-2 py-1 rounded uppercase tracking-widest">{p.reference}</span>
+                    <button onClick={() => openEdit(p)} className="p-1.5 text-dark-dim hover:text-primary transition-colors bg-white/5 rounded-lg opacity-0 group-hover:opacity-100">
+                      <PencilSimple size={16} />
+                    </button>
+                    <button onClick={() => { setProductToDelete(p); setIsDeleteOpen(true); }} className="p-1.5 text-dark-dim hover:text-danger transition-colors bg-white/5 rounded-lg opacity-0 group-hover:opacity-100">
+                      <Trash size={16} />
+                    </button>
                   </div>
-                  <span className="text-[10px] font-bold bg-white/5 px-2 py-1 rounded uppercase tracking-widest">{p.reference}</span>
                 </div>
                 <h3 className="text-lg font-bold mb-2">{p.name}</h3>
-                <p className="text-dark-dim text-xs mb-6 line-clamp-2">{p.description || 'Sem descrição'}</p>
+                <p className="text-dark-dim text-xs mb-6 line-clamp-2 flex-1">{p.description || 'Sem descrição'}</p>
                 
                 <div className="border-t border-dark-border pt-4">
                    <h4 className="text-[10px] uppercase font-bold text-dark-dim mb-3 tracking-widest">Insumos / Kit</h4>
@@ -168,10 +254,10 @@ const Products: React.FC = () => {
 
       {/* Modal Nova Ficha Técnica */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-dark-card border border-dark-border w-full max-w-lg rounded-2xl p-6 h-[90vh] flex flex-col">
-            <h2 className="text-xl font-bold mb-6">Nova Ficha Técnica</h2>
-            <form onSubmit={handleCreateProduct} className="space-y-4 flex-1 overflow-y-auto pr-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-dark-card border border-dark-border w-full max-w-lg rounded-2xl p-6 h-[90vh] flex flex-col animate-scale-up">
+            <h2 className="text-xl font-bold mb-6">{editingProduct ? 'Editar Ficha Técnica' : 'Nova Ficha Técnica'}</h2>
+            <form onSubmit={handleCreateProduct} className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                <div className="grid grid-cols-2 gap-4">
                   <div>
                      <label className="text-xs text-dark-dim mb-1 block">Referência</label>
@@ -242,14 +328,23 @@ const Products: React.FC = () => {
                   </div>
                </div>
                
-               <div className="flex gap-3 pt-6 sticky bottom-0 bg-dark-card">
-                  <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 px-6 py-3 border border-dark-border rounded-xl text-dark-dim">Cancelar</button>
-                  <button type="submit" className="flex-1 btn-primary justify-center">Salvar Ficha Técnica</button>
+               <div className="flex gap-3 pt-6 sticky bottom-0 bg-dark-card pb-2">
+                  <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 px-6 py-3 border border-dark-border rounded-xl text-dark-dim hover:bg-white/5 transition-all">Cancelar</button>
+                  <button type="submit" className="flex-1 btn-primary justify-center">{editingProduct ? 'Atualizar Ficha Técnica' : 'Salvar Ficha Técnica'}</button>
                </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Excluir Ficha Técnica"
+        message={`Tem certeza que deseja excluir a ficha técnica ${productToDelete?.reference}? Esta ação não pode ser desfeita e pode afetar Ordens de Produção existentes.`}
+        confirmText="Excluir"
+      />
     </div>
   );
 };

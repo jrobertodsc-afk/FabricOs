@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ClockCounterClockwise, MagnifyingGlass, User, Tag, ArrowRight } from '@phosphor-icons/react';
-import axios from 'axios';
-
+import api from '../services/api';
 interface LogEntry {
   timestamp: string;
   level: string;
@@ -17,10 +16,7 @@ const History: React.FC = () => {
 
   const fetchLogs = async () => {
     try {
-      const token = localStorage.getItem('fabricos_token');
-      const response = await axios.get('http://127.0.0.1:8000/api/system/logs', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/system/logs');
       setLogs(response.data);
     } catch (error) {
       console.error("Failed to fetch logs", error);

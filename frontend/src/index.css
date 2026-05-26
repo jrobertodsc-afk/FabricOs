@@ -24,7 +24,7 @@
   }
   
   ::placeholder {
-    @apply text-dark-dim/80 !important;
+    @apply text-dark-dim/80;
   }
 }
 

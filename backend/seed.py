@@ -1,21 +1,23 @@
 import asyncio
 import uuid
-from backend.app.core.database import async_session
+from backend.app.core.database import AsyncSessionLocal
 from backend.app.models.models import Tenant, User
+from backend.app.core.auth import get_password_hash
 
 async def seed_data():
-    async with async_session() as session:
+    async with AsyncSessionLocal() as session:
         # Check if tenant exists
-        tenant_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
-        tenant = Tenant(id=tenant_id, name="Empresa Teste", subdomain="teste")
+        tenant_id = uuid.uuid4()
+        tenant = Tenant(id=tenant_id, name="FabricOS Demo")
         session.add(tenant)
         
         user = User(
             id=uuid.uuid4(),
             tenant_id=tenant_id,
-            email="admin@teste.com",
-            full_name="Administrador",
-            is_active=True
+            email="roberto@fabricos.com",
+            full_name="Roberto FabricOS",
+            hashed_password=get_password_hash("admin123"),
+            role="admin"
         )
         session.add(user)
         await session.commit()

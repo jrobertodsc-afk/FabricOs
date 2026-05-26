@@ -35,3 +35,38 @@ async def login_for_access_token(
         "token_type": "bearer",
         "tenant_id": user.tenant_id
     }
+
+from backend.app.api.deps import get_current_tenant_id
+from backend.app.core.license_middleware import get_or_create_license_config, PUBLIC_KEY_PEM, ALGORITHM
+from jose import jwt
+import uuid
+from typing import Annotated
+
+@router.get("/license-status")
+async def get_license_status(
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    config = await get_or_create_license_config(db, tenant_id)
+    
+    # Realiza ping rápido para sincronizar com o Backoffice central
+    from backend.app.core.license_middleware import ping_central_backoffice
+    await ping_central_backoffice(db, config)
+    
+    enabled_modules = []
+    try:
+        payload = jwt.decode(config.license_key, PUBLIC_KEY_PEM, algorithms=[ALGORITHM])
+        enabled_modules = payload.get("enabled_modules", [])
+    except Exception:
+        pass
+        
+    return {
+        "tenant_id": str(tenant_id),
+        "is_locked": config.is_locked,
+        "enabled_modules": enabled_modules,
+        "current_version": config.current_version,
+        "update_channel": config.update_channel,
+        "last_verified_at": config.last_verified_at.isoformat() if config.last_verified_at else None,
+        "offline_grace_started_at": config.offline_grace_started_at.isoformat() if config.offline_grace_started_at else None,
+    }
+

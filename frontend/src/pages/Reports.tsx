@@ -17,7 +17,7 @@ const Reports: React.FC = () => {
           getPartners(),
           getSettlements()
         ]);
-        setOrders(oData);
+        setOrders(oData.items);
         setPartners(pData);
         setSettlements(sData);
       } catch (error) {
@@ -88,10 +88,10 @@ const Reports: React.FC = () => {
                    <div key={p.id}>
                       <div className="flex justify-between text-xs mb-2">
                          <span className="font-bold">{p.name}</span>
-                         <span className="text-dark-dim">{Math.floor(Math.random() * 500) + 100} peças / mês</span>
+                         <span className="text-dark-dim">{orders.filter(o => o.partner_id === p.id).length} OPs</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                         <div className="h-full bg-primary rounded-full" style={{ width: `${Math.floor(Math.random() * 60) + 40}%` }}></div>
+                         <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, orders.filter(o => o.partner_id === p.id).length * 10)}%` }}></div>
                       </div>
                    </div>
                 ))}

@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { CurrencyDollar, Receipt, Warning, CheckCircle, FileArrowDown } from '@phosphor-icons/react';
-import { getSettlements, getPartners, getProductionOrders, createSettlement } from '../services/api';
+import { CurrencyDollar, Receipt, FileArrowDown, CheckCircle, Clock } from '@phosphor-icons/react';
+import { getSettlements, getPartners, getProductionOrders, createSettlement, updateSettlement } from '../services/api';
 import type { Settlement, Partner, ProductionOrder } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 const Financials: React.FC = () => {
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newSettlement, setNewSettlement] = useState({
     order_id: '',
     deductions: 0
   });
+
+  const [filterMonth, setFilterMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const { addToast } = useToast();
 
   const loadData = async () => {
     try {
@@ -24,11 +32,9 @@ const Financials: React.FC = () => {
       ]);
       setSettlements(settData);
       setPartners(partData);
-      setOrders(ordData.filter(o => o.current_stage === 'Finalizado'));
+      setOrders(ordData.items.filter(o => o.current_stage === 'Finalizado'));
     } catch (error) {
       console.error("Failed to load financials", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -40,15 +46,36 @@ const Financials: React.FC = () => {
     e.preventDefault();
     try {
       await createSettlement(newSettlement);
+      addToast("Acerto realizado com sucesso!", "success");
       setIsModalOpen(false);
       setNewSettlement({ order_id: '', deductions: 0 });
       loadData();
     } catch (error) {
-      alert("Erro ao realizar acerto");
+      addToast("Erro ao realizar acerto", "error");
     }
   };
 
-  const totalPayable = settlements.filter(s => s.status === 'pendente').reduce((acc, s) => acc + s.net_amount, 0);
+  const toggleStatus = async (settlement: Settlement) => {
+    const newStatus = settlement.status === 'pago' ? 'pendente' : 'pago';
+    try {
+      await updateSettlement(settlement.id, { status: newStatus });
+      addToast(`Acerto marcado como ${newStatus}`, "success");
+      loadData();
+    } catch (error) {
+      addToast("Erro ao atualizar status do acerto", "error");
+    }
+  };
+
+  const filteredSettlements = settlements.filter(s => {
+    if (!filterMonth) return true;
+    const sDate = new Date(s.created_at);
+    const filterYear = parseInt(filterMonth.split('-')[0]);
+    const filterM = parseInt(filterMonth.split('-')[1]) - 1;
+    return sDate.getFullYear() === filterYear && sDate.getMonth() === filterM;
+  });
+
+  const totalPayable = filteredSettlements.filter(s => s.status === 'pendente').reduce((acc, s) => acc + s.net_amount, 0);
+  const totalPaid = filteredSettlements.filter(s => s.status === 'pago').reduce((acc, s) => acc + s.net_amount, 0);
 
   return (
     <div className="p-8 h-screen flex flex-col overflow-hidden">
@@ -73,11 +100,13 @@ const Financials: React.FC = () => {
         </div>
         <div className="card bg-success/5 border-success/20">
           <p className="text-dark-dim text-xs uppercase font-bold tracking-widest mb-1">Total Pago (Mês)</p>
-          <h2 className="text-3xl font-bold text-success font-outfit">R$ 0,00</h2>
+          <h2 className="text-3xl font-bold text-success font-outfit">
+            R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </h2>
         </div>
         <div className="card bg-blue-500/5 border-blue-500/20">
-          <p className="text-dark-dim text-xs uppercase font-bold tracking-widest mb-1">Aglomeração de OPs</p>
-          <h2 className="text-3xl font-bold text-blue-500 font-outfit">{settlements.length}</h2>
+          <p className="text-dark-dim text-xs uppercase font-bold tracking-widest mb-1">Total de Acertos (Mês)</p>
+          <h2 className="text-3xl font-bold text-blue-500 font-outfit">{filteredSettlements.length}</h2>
         </div>
       </div>
 
@@ -85,9 +114,17 @@ const Financials: React.FC = () => {
       <section className="card !p-0 overflow-hidden flex-1 flex flex-col">
         <div className="p-6 border-b border-dark-border flex justify-between items-center bg-white/[0.02]">
           <h3 className="font-bold">Histórico de Fechamentos</h3>
-          <button className="text-xs flex items-center gap-2 text-primary hover:underline">
-            <FileArrowDown size={18} /> Exportar CSV
-          </button>
+          <div className="flex gap-4">
+            <input 
+              type="month" 
+              value={filterMonth}
+              onChange={e => setFilterMonth(e.target.value)}
+              className="bg-dark-bg border border-dark-border rounded-xl px-3 py-1.5 text-sm focus:border-primary outline-none"
+            />
+            <button className="text-xs flex items-center gap-2 text-primary hover:underline">
+              <FileArrowDown size={18} /> Exportar CSV
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto">
@@ -104,7 +141,7 @@ const Financials: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border">
-              {settlements.map(s => {
+              {filteredSettlements.map(s => {
                 const partner = partners.find(p => p.id === s.partner_id);
                 const order = orders.find(o => o.id === s.order_id);
                 return (
@@ -121,15 +158,20 @@ const Financials: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-danger">- R$ {s.deductions.toFixed(2)}</td>
                     <td className="px-6 py-4 text-sm font-bold text-primary">R$ {s.net_amount.toFixed(2)}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${s.status === 'pago' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                      <button 
+                        onClick={() => toggleStatus(s)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all shadow-sm ${s.status === 'pago' ? 'bg-success/10 text-success hover:bg-success/20' : 'bg-warning/10 text-warning hover:bg-warning/20'}`}
+                        title={s.status === 'pago' ? "Marcar como Pendente" : "Marcar como Pago"}
+                      >
+                        {s.status === 'pago' ? <CheckCircle size={14} weight="bold" /> : <Clock size={14} weight="bold" />}
                         {s.status}
-                      </span>
+                      </button>
                     </td>
                   </tr>
                 );
               })}
-              {settlements.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-20 text-center text-dark-dim flex flex-col items-center gap-3">
+              {filteredSettlements.length === 0 && (
+                <tr><td colSpan={7} className="px-6 py-20 text-center text-dark-dim flex flex-col items-center gap-3">
                   <CurrencyDollar size={48} weight="thin" />
                   Nenhum acerto realizado.
                 </td></tr>

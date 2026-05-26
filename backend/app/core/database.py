@@ -2,16 +2,14 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import text
-from contextlib import asynccontextmanager
+from backend.app.core.config import settings
 
-# Define path relative to this file (backend/app/core/database.py)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DB_PATH = os.path.join(BASE_DIR, "fabricos.db")
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
+# DATABASE_URL vem do .env via pydantic-settings
+DATABASE_URL = settings.DATABASE_URL
 
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,
+    echo=settings.DEBUG,  # Só loga SQL em modo DEBUG, evita poluição nos logs de produção
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
 )
 
@@ -21,16 +19,24 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
+
 class Base(DeclarativeBase):
     pass
+
 
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-async def set_tenant_id(session: AsyncSession, tenant_id: str):
+
+async def set_tenant_id(session: AsyncSession, tenant_id: str) -> None:
     """
-    Sets the tenant_id in the PostgreSQL session for Row-Level Security (RLS).
+    Define o tenant_id na sessão PostgreSQL para Row-Level Security (RLS).
+    Usa parâmetro vinculado para prevenir SQL Injection.
     """
     if "postgresql" in str(engine.url):
-        await session.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
+        # Usa execute com literal_column para evitar interpolação direta de string
+        await session.execute(
+            text("SET app.tenant_id = :tid"),
+            {"tid": tenant_id}
+        )

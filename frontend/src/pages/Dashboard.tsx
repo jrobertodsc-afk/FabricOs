@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   ChartLineUp, Package, Users, Receipt, Warning, 
   MagnifyingGlass, Plus, ClockCounterClockwise, 
@@ -12,6 +12,7 @@ import type { Withdrawal, ProductionOrder, Partner, Settlement } from '../servic
 
 // Components
 import Partners from './Partners';
+import Withdrawals from './Withdrawals';
 import ProductionOrders from './ProductionOrders';
 import Financials from './Financials';
 import Products from './Products';
@@ -19,11 +20,34 @@ import Settings from './Settings';
 import History from './History';
 import Materials from './Materials';
 import Reports from './Reports';
+import Stock from './Stock';
+import Pilotage from './Pilotage';
 import WithdrawalModal from '../components/WithdrawalModal';
 import ReturnModal from '../components/ReturnModal';
+import Sidebar from '../components/Sidebar';
+import type { ViewType } from '../components/Sidebar';
+
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const [view, setView] = useState<'dashboard' | 'partners' | 'production' | 'financials' | 'products' | 'materials' | 'settings' | 'history' | 'reports'>('dashboard');
+  const navigate = useNavigate();
+  const [view, setView] = useState<ViewType>('dashboard');
+
+  // Decodifica o nome do usuário do token JWT (sem biblioteca extra)
+  const userInfo = useMemo(() => {
+    try {
+      const token = localStorage.getItem('fabricos_token');
+      if (!token) return { name: 'Usuário', role: 'user', initials: 'U' };
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const name: string = payload.full_name ?? payload.name ?? payload.sub ?? 'Usuário';
+      const role: string = payload.role ?? 'user';
+      const roleLabel = role === 'admin' ? 'Administrador' : role === 'manager' ? 'Gerente' : 'Usuário';
+      const initials = name.split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase();
+      return { name, role: roleLabel, initials };
+    } catch {
+      return { name: 'Usuário', role: 'Usuário', initials: 'U' };
+    }
+  }, []);
   
   // Data States
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
@@ -45,8 +69,8 @@ const Dashboard: React.FC = () => {
         getPartners(),
         getSettlements()
       ]);
-      setWithdrawals(wData);
-      setOrders(oData);
+      setWithdrawals(wData.items);   // Extrai .items da resposta paginada
+      setOrders(oData.items);        // Extrai .items da resposta paginada
       setPartners(pData);
       setSettlements(sData);
     } catch (error) {
@@ -82,16 +106,44 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const renderSidebarItem = (id: typeof view, label: string, icon: any) => (
-    <a 
-      href="#" 
-      onClick={() => setView(id)}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${view === id ? 'bg-primary/10 text-primary shadow-sm shadow-primary/10' : 'text-dark-dim hover:text-white hover:bg-white/5'}`}
-    >
-      {React.createElement(icon, { size: 20, weight: view === id ? "bold" : "regular" })}
-      <span className={view === id ? "font-bold" : ""}>{label}</span>
-    </a>
+
+
+  // Skeleton para cards de estatísticas enquanto carrega
+  const renderSkeletonCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="card animate-pulse">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-white/5 rounded-xl w-12 h-12" />
+          </div>
+          <div className="h-2.5 bg-white/5 rounded w-24 mb-3" />
+          <div className="h-8 bg-white/5 rounded w-16" />
+        </div>
+      ))}
+    </div>
   );
+
+  // Gráfico dinâmico: contagem de OPs criadas nos últimos 7 dias
+  const chartData = useMemo(() => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      const label = days[d.getDay()];
+      const count = orders.filter(o => {
+        const created = new Date(o.created_at);
+        return (
+          created.getDate() === d.getDate() &&
+          created.getMonth() === d.getMonth() &&
+          created.getFullYear() === d.getFullYear()
+        );
+      }).length;
+      return { label, count };
+    });
+  }, [orders]);
+
+  const chartMax = useMemo(() => Math.max(...chartData.map(d => d.count), 1), [chartData]);
 
   const renderDashboard = () => (
     <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
@@ -104,11 +156,11 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-2 rounded-2xl">
              <div className="text-right">
-                <p className="text-xs font-bold text-white">Roberto Nascimento</p>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Administrador</p>
+                <p className="text-xs font-bold text-white">{userInfo.name}</p>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{userInfo.role}</p>
              </div>
              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-hover rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-primary/20">
-                RN
+                {userInfo.initials}
              </div>
           </div>
           <button 
@@ -136,6 +188,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
+      {loading ? renderSkeletonCards() : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div className="card group">
           <div className="flex justify-between items-start mb-4">
@@ -184,6 +237,7 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
       </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 card !p-0 overflow-hidden">
@@ -199,19 +253,19 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="h-[280px] flex items-end justify-between gap-6 p-8">
-            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'].map((day, i) => (
-              <div key={day} className="flex-1 flex flex-col items-center gap-4 h-full group">
+            {chartData.map(({ label, count }) => (
+              <div key={label} className="flex-1 flex flex-col items-center gap-4 h-full group">
                 <div className="w-full bg-white/[0.03] rounded-t-2xl relative flex-1 overflow-hidden">
                   <div 
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/40 to-primary group-hover:to-primary-hover transition-all duration-700 rounded-t-2xl shadow-[0_-5px_15px_rgba(79,70,229,0.2)]" 
-                    style={{ height: `${[40, 70, 45, 90, 65, 30, 20][i]}%` }}
+                    style={{ height: count === 0 ? '4%' : `${Math.round((count / chartMax) * 100)}%` }}
                   >
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-dark-card border border-dark-border px-3 py-1.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-all duration-300 font-black shadow-2xl scale-90 group-hover:scale-100">
-                      {[120, 210, 140, 280, 190, 90, 50][i]} pçs
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-dark-card border border-dark-border px-3 py-1.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-all duration-300 font-black shadow-2xl scale-90 group-hover:scale-100 whitespace-nowrap">
+                      {count} OP{count !== 1 ? 's' : ''}
                     </div>
                   </div>
                 </div>
-                <span className="text-[11px] font-black text-dark-dim uppercase tracking-[0.2em]">{day}</span>
+                <span className="text-[11px] font-black text-dark-dim uppercase tracking-[0.2em]">{label}</span>
               </div>
             ))}
           </div>
@@ -271,69 +325,23 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-dark-bg text-white font-inter overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-72 bg-dark-card border-r border-dark-border flex flex-col">
-        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 rotate-3">
-              <TShirt size={26} weight="bold" className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black font-outfit tracking-tighter leading-none">FabricOS</h1>
-              <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">Smart Factory</p>
-            </div>
-          </div>
-
-          <nav className="space-y-2">
-            <p className="text-[10px] font-black text-dark-dim uppercase tracking-[0.2em] mb-4 ml-2">Menu Principal</p>
-            {renderSidebarItem('dashboard', 'Dashboard', ChartLineUp)}
-            {renderSidebarItem('production', 'Produção (OP)', Package)}
-            {renderSidebarItem('partners', 'Faccionistas', Users)}
-            {renderSidebarItem('financials', 'Financeiro (Acerto)', Receipt)}
-            
-            <p className="text-[10px] font-black text-dark-dim uppercase tracking-[0.2em] mb-4 mt-8 ml-2">Almoxarifado</p>
-            {renderSidebarItem('materials', 'Estoque Insumos', Ruler)}
-            {renderSidebarItem('products', 'Fichas Técnicas', ListChecks)}
-            
-            <p className="text-[10px] font-black text-dark-dim uppercase tracking-[0.2em] mb-4 mt-8 ml-2">Sistema</p>
-            {renderSidebarItem('history', 'Auditoria (Logs)', ClockCounterClockwise)}
-            {renderSidebarItem('reports', 'Relatórios & BI', ChartBar)}
-            {renderSidebarItem('settings', 'Configurações', Gear)}
-          </nav>
-        </div>
-
-        <div className="p-8 space-y-6">
-           <button 
-            onClick={() => {
-              localStorage.removeItem('fabricos_token');
-              window.location.reload();
-            }}
-            className="flex items-center gap-3 text-danger font-bold text-xs uppercase tracking-[0.2em] hover:bg-danger/10 p-3 rounded-xl w-full transition-all border border-transparent hover:border-danger/20"
-          >
-            Sair do Sistema
-          </button>
-          
-          <div className="pt-6 border-t border-dark-border/50 flex justify-between items-center">
-            <div>
-               <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Enterprise</p>
-               <p className="text-[10px] text-white/10 font-medium">Build 2026.04</p>
-            </div>
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-          </div>
-        </div>
-      </aside>
+      <Sidebar view={view} setView={setView} />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-dark-bg to-dark-card/20">
         <div className="flex-1 overflow-hidden flex flex-col">
           {view === 'dashboard' && renderDashboard()}
+          {view === 'withdrawals' && <Withdrawals />}
           {view === 'partners' && <Partners />}
           {view === 'production' && <ProductionOrders />}
           {view === 'financials' && <Financials />}
           {view === 'products' && <Products />}
+          {view === 'materials' && <Materials />}
           {view === 'settings' && <Settings />}
           {view === 'history' && <History />}
           {view === 'reports' && <Reports />}
+          {view === 'stock' && <Stock />}
+          {view === 'pilotage' && <Pilotage />}
         </div>
       </main>
 

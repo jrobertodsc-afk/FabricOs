@@ -1,25 +1,38 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
-from typing import List, Annotated
-import uuid
-
-from backend.app.core.database import get_db, set_tenant_id
-from backend.app.models import models
-from backend.app.schemas import schemas
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import withdrawals, partners, production, financials, products, materials, auth, system
-from backend.app.api.deps import get_current_tenant_id
+from fastapi.staticfiles import StaticFiles
+import os
+from loguru import logger
 
-app = FastAPI(title="FabricOS API")
+from backend.app.core.config import settings
+from backend.app.api import (
+    withdrawals, partners, production, financials, products,
+    materials, auth, system, upload, stock, pilotage, integrations,
+    employees, pieces, distributions, notifications, backoffice_server
+)
 
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    docs_url="/docs" if settings.DEBUG else None,   # Swagger só em DEBUG
+    redoc_url="/redoc" if settings.DEBUG else None,
+)
+
+# ---- CORS ----
+# Origens controladas via variável de ambiente CORS_ORIGINS no .env
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+os.makedirs("backend/uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
+
+# ---- Rotas ----
 app.include_router(auth.router)
 app.include_router(withdrawals.router)
 app.include_router(partners.router)
@@ -28,11 +41,64 @@ app.include_router(financials.router)
 app.include_router(products.router)
 app.include_router(materials.router)
 app.include_router(system.router)
+app.include_router(upload.router)
+app.include_router(stock.router)
+app.include_router(pilotage.router)
+app.include_router(integrations.router)
+app.include_router(employees.router)
+app.include_router(pieces.router)
+app.include_router(distributions.router)
+app.include_router(notifications.router)
+# O Central Backoffice de licenciamento só é exposto se NÃO estiver em produção estrita
+if os.getenv("FABRICOS_MODE") != "production":
+    app.include_router(backoffice_server.router)
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+
+# ---- Handler Global de Erros ----
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """
+    Captura qualquer exceção não tratada e retorna um erro 500 padronizado,
+    sem expor stack traces internos para o cliente em produção.
+    """
+    logger.exception(f"Unhandled error on {request.method} {request.url}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno no servidor. Tente novamente em instantes."},
+    )
+
+
+# ---- Health Check ----
+@app.get("/health", tags=["System"])
+async def health() -> dict:
+    return {"status": "ok", "version": settings.APP_VERSION}
+
+
+# ---- Fallback SPA Roteamento ----
+@app.get("/{catchall:path}", include_in_schema=False)
+async def spa_fallback(catchall: str):
+    # Ignora caminhos de API e Uploads
+    if catchall.startswith("api/") or catchall.startswith("uploads/"):
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    
+    # Caminho do build estático do frontend
+    import sys
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    frontend_dist = os.path.join(base_path, "frontend", "dist")
+    index_file = os.path.join(frontend_dist, "index.html")
+    
+    # Se for um arquivo estático físico na pasta dist (ex: assets/index.js)
+    file_path = os.path.join(frontend_dist, catchall)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+        
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+        
+    # Fallback de desenvolvimento local
+    local_index = os.path.abspath(os.path.join("frontend", "dist", "index.html"))
+    if os.path.exists(local_index):
+        return FileResponse(local_index)
+        
+    return JSONResponse(status_code=404, content={"detail": f"Frontend dist index.html not found at {index_file}"})

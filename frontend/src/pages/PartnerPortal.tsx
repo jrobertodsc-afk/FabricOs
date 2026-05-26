@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Portal doesn't need X-Tenant-ID header because token identifies everything
 const portalApi = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
 const PartnerPortal: React.FC = () => {
@@ -28,6 +28,22 @@ const PartnerPortal: React.FC = () => {
     if (token) fetchPortalData();
   }, [token]);
 
+  const handleStageChange = async (orderId: string, newStage: string) => {
+    try {
+      await portalApi.post(`/api/partners/portal/${token}/orders/${orderId}/stage`, { stage: newStage });
+      setData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          orders: prev.orders.map((o: any) => o.id === orderId ? { ...o, current_stage: newStage } : o)
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update stage", error);
+      alert("Erro ao atualizar etapa.");
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">Carregando portal...</div>;
   if (!data) return <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">Acesso negado ou token inválido.</div>;
 
@@ -45,7 +61,7 @@ const PartnerPortal: React.FC = () => {
         </div>
         <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl text-sm text-primary flex items-center gap-3">
           <CheckCircle size={20} />
-          <span>Este é o seu painel de acompanhamento de pedidos.</span>
+          <span>Este é o seu painel de acompanhamento de pedidos. Atualize a etapa do lote para notificar a fábrica instantaneamente.</span>
         </div>
       </header>
 
@@ -72,21 +88,24 @@ const PartnerPortal: React.FC = () => {
                     <h3 className="text-lg font-bold">{order.item_name}</h3>
                   </div>
                   <div className="text-right">
-                    <span className="bg-warning/10 text-warning px-3 py-1 rounded-full text-xs font-bold">
-                      {order.current_stage}
-                    </span>
+                    <span className="block text-[9px] font-bold text-dark-dim uppercase tracking-wider mb-1">Estágio Atual</span>
+                    <select
+                      value={order.current_stage}
+                      onChange={e => handleStageChange(order.id, e.target.value)}
+                      className="bg-dark-bg border border-dark-border rounded-lg py-1 px-3 text-xs font-bold text-warning cursor-pointer outline-none focus:border-warning"
+                    >
+                      <option value="Corte">Corte</option>
+                      <option value="Costura">Costura</option>
+                      <option value="Acabamento">Acabamento</option>
+                      <option value="Finalizado">Finalizado</option>
+                    </select>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-6 border-t border-dark-border pt-4 mt-4">
                   <div className="flex items-center gap-2 text-sm text-dark-dim">
                     <Package size={18} />
-                    <span>{order.total_quantity} peças</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-dark-dim ml-auto">
-                    <button className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg transition-colors text-xs font-bold">
-                      Confirmar Entrega
-                    </button>
+                    <span>{order.total_quantity} peças ({Object.entries(order.size_grade || {}).map(([s, q]) => `${s}: ${q}`).join(', ')})</span>
                   </div>
                 </div>
               </div>
