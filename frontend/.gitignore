@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist (Comentado para permitir que o Railway receba a build compilada)
 dist-ssr
 *.local
 
