@@ -139,7 +139,7 @@ const Withdrawals: React.FC = () => {
       {loading ? (
         <p className="text-dark-dim">Carregando retiradas...</p>
       ) : (
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-dark-card border border-dark-border rounded-2xl">
+        <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-dark-card border border-dark-border rounded-2xl">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-dark-border bg-white/[0.02]">

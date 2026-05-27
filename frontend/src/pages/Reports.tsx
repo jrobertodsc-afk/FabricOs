@@ -82,7 +82,7 @@ const Reports: React.FC = () => {
             </h3>
             <Funnel size={18} className="text-dark-dim cursor-pointer" />
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar p-6">
              <div className="space-y-6">
                 {partners.filter(p => p.type === 'faccionista').map(p => (
                    <div key={p.id}>
@@ -105,7 +105,7 @@ const Reports: React.FC = () => {
               <Calendar size={18} className="text-info" /> Prazos e Vencimentos
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar">
              <table className="w-full text-left">
                 <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-dark-dim">
                    <tr>

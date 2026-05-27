@@ -221,7 +221,7 @@ const Pilotage: React.FC = () => {
       </header>
 
       {/* Grid containing the BOAH tags */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">
         {loading ? (
           <div className="p-20 text-center text-dark-dim flex flex-col items-center justify-center gap-4">
             <ArrowsClockwise className="animate-spin text-primary" size={32} />
@@ -382,7 +382,7 @@ const Pilotage: React.FC = () => {
             </h2>
             <p className="text-xs text-dark-dim mb-6">Preencha os dados da etiqueta física.</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-dark-dim mb-1 block">Nome do Modelo</label>
@@ -555,7 +555,7 @@ const Pilotage: React.FC = () => {
               <h2 className="text-lg font-bold font-outfit text-white">Notas de Modelagem / Ajustes</h2>
             </div>
             
-            <div className="p-4 rounded-xl border border-dark-border bg-white/[0.01] mb-6 text-sm text-white/90 font-mono leading-relaxed whitespace-pre-line max-h-60 overflow-y-auto">
+            <div className="p-4 rounded-xl border border-dark-border bg-white/[0.01] mb-6 text-sm text-white/90 font-mono leading-relaxed whitespace-pre-line max-h-60 overflow-y-auto overflow-x-auto">
               {activeCard.notes || 'Sem observações cadastradas para esta peça piloto.'}
             </div>
 

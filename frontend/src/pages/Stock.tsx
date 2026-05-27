@@ -183,7 +183,7 @@ const Stock: React.FC = () => {
 
       {/* Main Stock Table */}
       <div className="card flex-1 overflow-hidden flex flex-col !p-0">
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar">
           {loading ? (
             <div className="p-20 text-center text-dark-dim flex flex-col items-center justify-center gap-4">
               <ArrowsClockwise className="animate-spin text-primary" size={32} />
@@ -264,7 +264,7 @@ const Stock: React.FC = () => {
               Registrar entrada ou saída manual no estoque: <strong className="text-primary">{activeTab === 'producao' ? 'Comercial' : 'Acervo'}</strong>
             </p>
 
-            <form onSubmit={handleAdjustStock} className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <form onSubmit={handleAdjustStock} className="space-y-4 flex-1 overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">
               {/* Product Selection */}
               <div>
                 <label className="text-xs text-dark-dim mb-1 block">Modelo / Produto</label>
@@ -408,7 +408,7 @@ const Stock: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
+            <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar space-y-4">
               {activeMovements.length === 0 ? (
                 <div className="text-center py-20 text-dark-dim flex flex-col items-center gap-2">
                   <ListChecks size={36} weight="thin" />

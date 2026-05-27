@@ -127,7 +127,7 @@ const Financials: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-auto">
           <table className="w-full text-left">
             <thead className="sticky top-0 bg-dark-card z-10">
               <tr className="table-header">

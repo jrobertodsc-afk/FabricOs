@@ -51,7 +51,7 @@ const History: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar">
           {loading ? (
             <div className="p-10 text-center text-dark-dim">Carregando trilha de auditoria...</div>
           ) : logs.length === 0 ? (
