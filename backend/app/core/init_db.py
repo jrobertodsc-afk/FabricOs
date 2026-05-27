@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.database import engine, AsyncSessionLocal
 from backend.app.models.models import Base, Tenant, User, LicenseConfig
@@ -33,6 +33,12 @@ async def auto_initialize_db():
             try:
                 await conn.execute(text("ALTER TABLE withdrawals ADD COLUMN product_id VARCHAR(36)"))
                 logger.info("Coluna 'product_id' adicionada à tabela withdrawals.")
+            except Exception:
+                pass # Coluna já existe
+                
+            try:
+                await conn.execute(text("ALTER TABLE quality_records ADD COLUMN order_id CHAR(32)"))
+                logger.info("Coluna 'order_id' adicionada à tabela quality_records.")
             except Exception:
                 pass # Coluna já existe
 
