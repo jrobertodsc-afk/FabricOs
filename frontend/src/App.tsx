@@ -18,6 +18,7 @@ import LicenseLockScreen from './pages/LicenseLockScreen';
 import { ToastProvider } from './contexts/ToastContext';
 import { LicenseProvider, useLicense } from './contexts/LicenseContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import FichaTecnicaView from './pages/FichaTecnicaView';
 
 import FeedbackWidget from './components/FeedbackWidget';
 import { WarningCircle } from '@phosphor-icons/react';
@@ -71,6 +72,8 @@ function AppContent() {
 
           {/* Backoffice Route - Seguro por Token de Admin e isolamento no Backend */}
           <Route path="/backoffice" element={<BackofficeDashboard />} />
+          
+          <Route path="/ficha/:id" element={<FichaTecnicaView />} />
         </Routes>
       </BrowserRouter>
 

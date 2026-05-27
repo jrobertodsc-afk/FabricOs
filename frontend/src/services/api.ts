@@ -61,6 +61,7 @@ export interface Withdrawal {
   destination?: string;
   status: string;
   partner_id?: string;
+  product_id?: string;
   employee_id?: string; // Adicionado V4
   expected_return?: string;
   notes?: string;
@@ -89,6 +90,7 @@ export interface WithdrawalCreatePayload {
   notes?: string;
   photo_urls?: string[];
   partner_id?: string;
+  product_id?: string;
   employee_id?: string; // Adicionado V4
   items: { size: string; quantity: number }[];
   signature_url?: string;
@@ -241,6 +243,7 @@ export interface Product {
   reference: string;
   name: string;
   description?: string;
+  type: string;
   base_price: number;
   materials: ProductMaterial[];
   image_url?: string;
@@ -251,15 +254,18 @@ export interface ProductCreatePayload {
   reference: string;
   name: string;
   description?: string;
+  type?: string;
   base_price?: number;
   materials: { material_id: string; quantity: number }[];
   image_url?: string;
+  initial_stock?: Record<string, number>;
 }
 
 export interface ProductUpdatePayload {
   reference?: string;
   name?: string;
   description?: string;
+  type?: string;
   base_price?: number;
   materials?: { material_id: string; quantity: number }[];
   image_url?: string;

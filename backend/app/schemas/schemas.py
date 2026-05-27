@@ -50,6 +50,7 @@ class WithdrawalBase(BaseModel):
     photo_urls: Optional[List[str]] = []
     return_photo_urls: Optional[List[str]] = []
     partner_id: Optional[UUID] = None  # Adicionado: necessário para vincular ao faccionista
+    product_id: Optional[UUID] = None
     employee_id: Optional[UUID] = None  # Adicionado: funcionário interno
     signature_url: Optional[str] = None
 
@@ -62,6 +63,7 @@ class WithdrawalUpdate(BaseModel):
     person_name: Optional[str] = None
     phone_number: Optional[str] = None
     reason: Optional[str] = None
+    product_id: Optional[UUID] = None
     destination: Optional[str] = None
     expected_return: Optional[datetime] = None
     notes: Optional[str] = None
@@ -134,16 +136,19 @@ class ProductBase(BaseModel):
     reference: str
     name: str
     description: Optional[str] = None
+    type: str = "produto_acabado"
     base_price: Optional[float] = 0
     image_url: Optional[str] = None
 
 class ProductCreate(ProductBase):
     materials: List[ProductMaterialBase]
+    initial_stock: Optional[Dict[str, int]] = None
 
 class ProductUpdate(BaseModel):
     reference: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
+    type: Optional[str] = None
     base_price: Optional[float] = None
     materials: Optional[List[ProductMaterialBase]] = None
     image_url: Optional[str] = None

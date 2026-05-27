@@ -64,35 +64,26 @@ const Products: React.FC = () => {
           reference: newProduct.reference,
           name: newProduct.name,
           description: newProduct.description,
+          type: newProduct.classification,
           base_price: newProduct.base_price,
           materials: newProduct.materials
         });
         addToast("Ficha Técnica atualizada com sucesso", "success");
       } else {
-        const createdProduct = await createProduct({
+        const payload: any = {
           reference: newProduct.reference,
           name: newProduct.name,
           description: newProduct.description,
+          type: newProduct.classification,
           base_price: newProduct.base_price,
           materials: newProduct.materials
-        });
+        };
         
-        // Feed stock if requested
         if (newProduct.feedStock && newProduct.stockQuantity > 0) {
-          const stockTypeMap: Record<string, 'producao' | 'acervo' | 'piloto'> = {
-            'produto_acabado': 'producao',
-            'acervo': 'acervo',
-            'piloto': 'piloto'
-          };
-          
-          await adjustFinishedStock({
-            product_id: createdProduct.id,
-            stock_type: stockTypeMap[newProduct.classification],
-            movement_type: 'entrada',
-            quantity_grade: { 'U': newProduct.stockQuantity },
-            description: 'Cadastro inicial de peça'
-          });
+          payload.initial_stock = { 'U': newProduct.stockQuantity };
         }
+
+        const createdProduct = await createProduct(payload);
         
         // Generate Pilotage Card if it's a pilot
         if (newProduct.classification === 'piloto') {
@@ -247,8 +238,20 @@ const Products: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="text-lg font-bold mb-2">{p.name}</h3>
-                <p className="text-dark-dim text-xs mb-6 line-clamp-2 flex-1">{p.description || 'Sem descrição'}</p>
+                <p className="text-dark-dim text-xs mb-4 line-clamp-2 flex-1">{p.description || 'Sem descrição'}</p>
                 
+                {p.type === 'piloto' && (
+                  <div className="mb-6">
+                    <button 
+                      onClick={() => window.open(`/ficha/${p.id}`, '_blank')}
+                      className="w-full py-2 bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-white transition-colors rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <ListChecks size={16} />
+                      Ver Ficha Técnica
+                    </button>
+                  </div>
+                )}
+
                 <div className="border-t border-dark-border pt-4">
                    <h4 className="text-[10px] uppercase font-bold text-dark-dim mb-3 tracking-widest">Insumos / Kit</h4>
                    <div className="space-y-2">

@@ -146,6 +146,7 @@ class Withdrawal(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
     partner_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("partners.id"))
     production_order_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("production_orders.id"))
+    product_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("products.id"), nullable=True)
     employee_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("employees.id"), nullable=True)
 
     item_name: Mapped[str] = mapped_column(String(255))
@@ -199,6 +200,7 @@ class Product(Base):
     reference: Mapped[str] = mapped_column(String(50), unique=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(Text)
+    type: Mapped[str] = mapped_column(String(50), default="produto_acabado")
     # CORRIGIDO: era Integer
     base_price: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), default=0)
     image_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)

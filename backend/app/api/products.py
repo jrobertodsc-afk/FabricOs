@@ -39,6 +39,7 @@ async def create_product(
         reference=product_in.reference,
         name=product_in.name,
         description=product_in.description,
+        type=product_in.type,
         base_price=product_in.base_price,
         image_url=product_in.image_url,
         materials=[]
@@ -50,8 +51,19 @@ async def create_product(
             material_id=mat.material_id,
             quantity=mat.quantity
         ))
-    
+
     db.add(new_product)
+    await db.flush()
+
+    if product_in.initial_stock:
+        stock_type = "acervo" if product_in.type == "acervo" else "producao"
+        new_stock = models.FinishedStockItem(
+            tenant_id=tenant_id,
+            product_id=new_product.id,
+            stock_type=stock_type,
+            size_grade=product_in.initial_stock
+        )
+        db.add(new_stock)
     await db.commit()
     db.expunge_all()
     
