@@ -322,6 +322,13 @@ async def validate_license(payload: LicenseValidationRequest):
 # =====================================================================
 #  ENDPOINTS: GESTÃO DE CLIENTES (CRUD)
 # =====================================================================
+import traceback
+LAST_ERROR = {"error": "Nenhum erro registrado desde a inicialização."}
+
+@router.get("/last_error")
+async def get_last_error():
+    return LAST_ERROR
+
 @router.get("/clients")
 async def list_backoffice_clients(admin: None = Depends(verify_admin_token)):
     """Retorna a lista de todas as instâncias de clientes."""

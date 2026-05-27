@@ -64,10 +64,18 @@ async def startup_event():
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Captura qualquer exceção não tratada e retorna um erro 500 padronizado,
-    sem expor stack traces internos para o cliente em produção.
+    além de despachar para o Telegram (se configurado).
     """
-    logger.exception(f"Unhandled error on {request.method} {request.url}: {exc}")
+    error_msg = f"Crashlytics [500] 🚨\n\n**URL:** {request.url}\n**Method:** {request.method}\n**Erro:** {str(exc)}"
+    logger.error(error_msg)
     
+    try:
+        from backend.app.api.backoffice_server import LAST_ERROR
+        import traceback
+        LAST_ERROR["error"] = traceback.format_exc()
+    except:
+        pass
+
     # Envia notificação pro Telegram
     try:
         from backend.app.core.telegram import send_telegram_message
