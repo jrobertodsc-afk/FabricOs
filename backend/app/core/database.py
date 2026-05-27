@@ -9,6 +9,12 @@ DATABASE_URL = settings.DATABASE_URL
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+# Remove unsupported ?pgbouncer=true parameter for asyncpg
+if "?pgbouncer=true" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("?pgbouncer=true", "")
+if "&pgbouncer=true" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("&pgbouncer=true", "")
+
 connect_args = {}
 if "sqlite" in DATABASE_URL:
     connect_args["check_same_thread"] = False
