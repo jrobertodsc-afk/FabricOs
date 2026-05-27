@@ -38,6 +38,17 @@ const Settings: React.FC = () => {
   const [trelloWebhookUrl, setTrelloWebhookUrl] = useState('');
   const [trelloSaving, setTrelloSaving] = useState(false);
   const [trelloActiveBoards, setTrelloActiveBoards] = useState<any[]>([]);
+  const [devUnlocked, setDevUnlocked] = useState(false);
+
+  const handleUnlockAdvanced = () => {
+    const pwd = window.prompt("Digite a senha do administrador para desbloquear as configurações avançadas:");
+    if (pwd === "admin123" || pwd === "roberto2024") {
+      setDevUnlocked(true);
+      addToast("Configurações avançadas desbloqueadas", "success");
+    } else if (pwd !== null) {
+      addToast("Senha incorreta", "error");
+    }
+  };
 
   const loadStages = async () => {
     try {
@@ -244,7 +255,17 @@ const Settings: React.FC = () => {
           </form>
         </section>
 
-        {user?.role === 'admin' && (
+        <div className="max-w-2xl mt-8">
+        {!devUnlocked && user?.role !== 'admin' && (
+          <button 
+            onClick={handleUnlockAdvanced}
+            className="text-xs text-dark-dim hover:text-white transition-colors underline mb-4"
+          >
+            Desbloquear Configurações Avançadas (Dev)
+          </button>
+        )}
+        
+        {(user?.role === 'admin' || devUnlocked) && (
           <section className="card border border-dark-border hover:border-primary/20 transition-all">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-primary/10 text-primary p-2 rounded-lg">
