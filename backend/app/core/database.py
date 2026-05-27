@@ -9,10 +9,18 @@ DATABASE_URL = settings.DATABASE_URL
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+connect_args = {}
+if "sqlite" in DATABASE_URL:
+    connect_args["check_same_thread"] = False
+elif "postgresql" in DATABASE_URL:
+    # Fix para o pooler (PGBouncer) do Supabase com asyncpg
+    connect_args["prepared_statement_cache_size"] = 0
+    connect_args["statement_cache_size"] = 0
+
 engine = create_async_engine(
     DATABASE_URL,
     echo=settings.DEBUG,  # Só loga SQL em modo DEBUG, evita poluição nos logs de produção
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(
