@@ -410,6 +410,8 @@ async def register_trello_webhook(
             if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
                 base_url = base_url.replace("http://", "https://")
             webhook_url = f"{base_url}/api/integrations/trello"
+        elif webhook_url.startswith("http://") and "localhost" not in webhook_url and "127.0.0.1" not in webhook_url:
+            webhook_url = webhook_url.replace("http://", "https://")
             
         # 3. Check if webhook is already registered on Trello to avoid duplicates
         webhooks_url = f"https://api.trello.com/1/tokens/{token}/webhooks"
@@ -443,11 +445,14 @@ async def register_trello_webhook(
                     timeout=10.0
                 )
                 if reg_res.status_code != 200:
-                    logger.error(f"Erro ao registrar webhook no Trello: {reg_res.text}")
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Erro ao registrar webhook no Trello: {reg_res.text}"
-                    )
+                    if "already exists" in reg_res.text:
+                        logger.info(f"Webhook já existia no Trello (ignorado o erro 400): {reg_res.text}")
+                    else:
+                        logger.error(f"Erro ao registrar webhook no Trello: {reg_res.text}")
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Erro ao registrar webhook no Trello: {reg_res.text}"
+                        )
             except Exception as e:
                 if isinstance(e, HTTPException):
                     raise e
