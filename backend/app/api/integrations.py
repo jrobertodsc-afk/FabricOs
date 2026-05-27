@@ -182,84 +182,7 @@ async def trello_webhook_handler(
         await db.flush()
         logger.info(f"Reutilizando produto existente '{card_name}' no FabricOS.")
 
-    # 3. Cria a Ordem de Produção (OP) automática
-    # Gera o número da OP de forma sequencial e atômica
-    max_query = select(func.max(models.ProductionOrder.order_number)).where(
-        models.ProductionOrder.tenant_id == resolved_tenant_id,
-        models.ProductionOrder.order_number.like("OP-%"),
-    )
-    max_result = await db.execute(max_query)
-    last_op = max_result.scalar_one_or_none()
-    if last_op:
-        try:
-            last_num = int(last_op.split("-")[1])
-        except (IndexError, ValueError):
-            last_num = 0
-    else:
-        last_num = 0
-    order_number = f"OP-{last_num + 1:04d}"
-
-    # Captura o nome do Quadro do Trello de forma totalmente dinâmica
-    board = data.get("board", {})
-    board_name = board.get("name") if board else None
-    
-    if not board_name:
-        model = payload.get("model", {})
-        board_name = model.get("name") if model else None
-        
-    if not board_name:
-        board_name = "BOAH VERÃO 26/27" # Fallback caso falhe
-
-    # Define a Coleção correta dependendo do nome do Quadro e da coluna destino
-    month_suffix = ""
-    if "JULHO" in list_upper:
-        month_suffix = " - JULHO"
-    elif "AGOSTO" in list_upper:
-        month_suffix = " - AGOSTO"
-    elif "SETEMBRO" in list_upper:
-        month_suffix = " - SETEMBRO"
-    elif "OUTUBRO" in list_upper:
-        month_suffix = " - OUTUBRO"
-    elif "NOVEMBRO" in list_upper:
-        month_suffix = " - NOVEMBRO"
-    elif "DEZEMBRO" in list_upper:
-        month_suffix = " - DEZEMBRO"
-    elif "JANEIRO" in list_upper:
-        month_suffix = " - JANEIRO"
-    elif "FEVEREIRO" in list_upper:
-        month_suffix = " - FEVEREIRO"
-    elif "MARÇO" in list_upper:
-        month_suffix = " - MARÇO"
-    elif "ABRIL" in list_upper:
-        month_suffix = " - ABRIL"
-    elif "MAIO" in list_upper:
-        month_suffix = " - MAIO"
-    elif "JUNHO" in list_upper:
-        month_suffix = " - JUNHO"
-    else:
-        month_suffix = f" - {list_after_name}"
-
-    collection = f"{board_name}{month_suffix}"
-
-    default_grade = {"PP": 0, "P": 0, "M": 0, "G": 0, "GG": 0, "U": 0}
-
-    new_order = models.ProductionOrder(
-        id=uuid.uuid4(),
-        tenant_id=resolved_tenant_id,
-        order_number=order_number,
-        item_name=card_name,
-        total_quantity=1,
-        price_per_piece=0.0,
-        product_id=product.id,
-        current_stage="Corte",
-        status="em_andamento",
-        collection=collection,
-        size_grade=default_grade,
-        observations=f"Criada automaticamente via integração com Trello.\nCard original: {card_name}\nLink/ID do Card: {card_id}"
-    )
-    db.add(new_order)
     await db.commit()
-    logger.info(f"Ordem de Produção {order_number} criada para o produto '{card_name}' via Webhook Trello.")
 
     return {
         "status": "success",
@@ -269,11 +192,6 @@ async def trello_webhook_handler(
             "name": product.name,
             "reference": product.reference,
             "image_url": product.image_url
-        },
-        "production_order": {
-            "id": str(new_order.id),
-            "order_number": new_order.order_number,
-            "collection": new_order.collection
         }
     }
 

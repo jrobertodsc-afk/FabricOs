@@ -1140,4 +1140,17 @@ export const getLicenseStatus = async () => {
   return response.data;
 };
 
+export interface IntegrationSettings {
+  api_key: string;
+  token: string;
+  board_url: string;
+  webhook_url: string;
+  active_boards: any[];
+}
+
+export const getIntegrationSettings = async () => {
+  const response = await api.get<IntegrationSettings>('/api/integrations/settings');
+  return response.data;
+};
+
 export default api;

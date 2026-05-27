@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Tag, Plus, PencilSimple, CheckCircle, WarningCircle, Eye, Image, ArrowsClockwise, ArrowSquareOut, Notebook, MagnifyingGlass } from '@phosphor-icons/react';
-import { getPilotageCards, createPilotageCard, updatePilotageCard, sendPilotageToAcervo, uploadImage, API_BASE_URL } from '../services/api';
+import { getPilotageCards, createPilotageCard, updatePilotageCard, sendPilotageToAcervo, uploadImage, API_BASE_URL, getIntegrationSettings } from '../services/api';
 import type { PilotageCard } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
@@ -16,6 +16,7 @@ const Pilotage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [trelloUrl, setTrelloUrl] = useState<string>('');
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,7 +56,21 @@ const Pilotage: React.FC = () => {
 
   useEffect(() => {
     loadCards();
+    loadTrelloSettings();
   }, []);
+
+  const loadTrelloSettings = async () => {
+    try {
+      const settings = await getIntegrationSettings();
+      if (settings && settings.board_url) {
+        setTrelloUrl(settings.board_url);
+      } else {
+        setTrelloUrl('https://trello.com');
+      }
+    } catch (error) {
+      setTrelloUrl('https://trello.com');
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,7 +224,7 @@ const Pilotage: React.FC = () => {
           </div>
 
           <button 
-            onClick={() => window.open('https://trello.com/b/uX9H1e3o/fabric-os-pilotagem', '_blank')} 
+            onClick={() => window.open(trelloUrl, '_blank')} 
             className="flex items-center gap-2 px-4 py-2 bg-[#0052CC]/10 text-[#0052CC] rounded-xl hover:bg-[#0052CC]/20 transition-all font-bold text-sm"
           >
             <ArrowSquareOut size={18} weight="bold" />
