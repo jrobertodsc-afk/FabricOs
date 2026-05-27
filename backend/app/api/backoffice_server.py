@@ -364,6 +364,7 @@ async def create_client(
         is_active=True
     )
     db.add(new_tenant)
+    await db.flush() # Força a criação do tenant no banco para as constraints funcionarem
     
     # 2. Criar Usuário Admin no PostgreSQL
     new_user = models.User(
