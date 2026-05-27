@@ -348,12 +348,12 @@ export const trackWithdrawal = async (code: string) => {
 
 // ---- Partners ----
 export const getPartners = async () => {
-  const response = await api.get<Partner[]>('/api/partners');
+  const response = await api.get<Partner[]>('/api/partners/');
   return response.data;
 };
 
 export const createPartner = async (data: PartnerCreatePayload) => {
-  const response = await api.post<Partner>('/api/partners', data);
+  const response = await api.post<Partner>('/api/partners/', data);
   return response.data;
 };
 
