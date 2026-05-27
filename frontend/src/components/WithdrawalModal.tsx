@@ -150,6 +150,9 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
               >
                 <option value="interno">Interno (Foto/Evento)</option>
                 <option value="faccionista">Faccionista (Produção)</option>
+                <option value="camila_schreiber">Camila Schreiber</option>
+                <option value="estilo">Estilo</option>
+                <option value="cadista">Cadista</option>
               </select>
             </div>
             <div className="flex flex-col gap-2">

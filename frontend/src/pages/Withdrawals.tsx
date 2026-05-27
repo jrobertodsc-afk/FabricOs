@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Package, User, WhatsappLogo, CheckCircle, EnvelopeSimple, Camera, QrCode, X } from '@phosphor-icons/react';
+import { Package, User, WhatsappLogo, CheckCircle, EnvelopeSimple, Camera, QrCode, X, Trash } from '@phosphor-icons/react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getWithdrawals, getPartners, returnWithdrawal, API_BASE_URL } from '../services/api';
+import { getWithdrawals, getPartners, returnWithdrawal, deleteWithdrawal, API_BASE_URL } from '../services/api';
 import type { Withdrawal, Partner, ReturnPayload } from '../services/api';
 import ReturnModal from '../components/ReturnModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 
 const Withdrawals: React.FC = () => {
@@ -14,6 +15,9 @@ const Withdrawals: React.FC = () => {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
   const [activeQrWithdrawal, setActiveQrWithdrawal] = useState<Withdrawal | null>(null);
+  
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [withdrawalToDelete, setWithdrawalToDelete] = useState<Withdrawal | null>(null);
 
   const { addToast } = useToast();
 
@@ -99,11 +103,23 @@ const Withdrawals: React.FC = () => {
       await returnWithdrawal(selectedWithdrawal.id, data);
       setIsReturnOpen(false);
       setSelectedWithdrawal(null);
+      addToast("Devolução registrada com sucesso", "success");
       loadData();
-      addToast("Baixa realizada com sucesso!", "success");
     } catch (error) {
-      console.error("Failed to return withdrawal", error);
-      addToast("Erro ao realizar baixa. Tente novamente.", "error");
+      addToast("Erro ao registrar devolução", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!withdrawalToDelete) return;
+    try {
+      await deleteWithdrawal(withdrawalToDelete.id);
+      addToast("Retirada excluída com sucesso", "success");
+      setIsDeleteOpen(false);
+      setWithdrawalToDelete(null);
+      loadData();
+    } catch (error) {
+      addToast("Erro ao excluir retirada", "error");
     }
   };
 
@@ -229,6 +245,13 @@ const Withdrawals: React.FC = () => {
                             <Camera size={18} />
                           </button>
                         )}
+                        <button 
+                          onClick={() => { setWithdrawalToDelete(w); setIsDeleteOpen(true); }}
+                          className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition-colors"
+                          title="Excluir Retirada"
+                        >
+                          <Trash size={18} />
+                        </button>
                         {w.status === 'Pendente' && (
                           <button 
                             onClick={() => openReturnModal(w)}
@@ -258,11 +281,23 @@ const Withdrawals: React.FC = () => {
       {selectedWithdrawal && (
         <ReturnModal 
           isOpen={isReturnOpen} 
-          onClose={() => setIsReturnOpen(false)}
+          onClose={() => {
+            setIsReturnOpen(false);
+            setSelectedWithdrawal(null);
+          }}
           onSubmit={handleReturnSubmit}
           withdrawal={selectedWithdrawal}
         />
       )}
+
+      <ConfirmDialog 
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Excluir Retirada"
+        message={`Tem certeza que deseja excluir a retirada de ${withdrawalToDelete?.item_name}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+      />
 
       {activeQrWithdrawal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">

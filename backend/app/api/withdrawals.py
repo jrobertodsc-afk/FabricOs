@@ -325,3 +325,24 @@ async def track_withdrawal(
 
     return schemas.Withdrawal.model_validate(withdrawal)
 
+@router.delete("/{withdrawal_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_withdrawal(
+    withdrawal_id: uuid.UUID,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.Withdrawal).where(
+        models.Withdrawal.id == withdrawal_id,
+        models.Withdrawal.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    withdrawal = result.scalar_one_or_none()
+    
+    if not withdrawal:
+        raise HTTPException(status_code=404, detail="Retirada não encontrada")
+        
+    await db.delete(withdrawal)
+    await db.commit()
+
+

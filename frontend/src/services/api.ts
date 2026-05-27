@@ -342,8 +342,13 @@ export const returnWithdrawal = async (id: string, data: ReturnPayload) => {
   return response.data;
 };
 
-export const updateWithdrawal = async (id: string, data: WithdrawalUpdatePayload) => {
-  const response = await api.patch<Withdrawal>(`/api/withdrawals/${id}`, data);
+export const updateWithdrawal = async (id: string, updateData: WithdrawalUpdatePayload) => {
+  const response = await api.patch<Withdrawal>(`/api/withdrawals/${id}`, updateData);
+  return response.data;
+};
+
+export const deleteWithdrawal = async (id: string) => {
+  const response = await api.delete(`/api/withdrawals/${id}`);
   return response.data;
 };
 

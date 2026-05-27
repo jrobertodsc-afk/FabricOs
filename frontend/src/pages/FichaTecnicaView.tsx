@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getProducts } from '../services/api';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getProducts, deleteProduct } from '../services/api';
 import type { Product } from '../services/api';
-import { Package, Printer, ArrowLeft } from '@phosphor-icons/react';
+import { Package, Printer, ArrowLeft, Trash } from '@phosphor-icons/react';
+import { useToast } from '../contexts/ToastContext';
 
 const FichaTecnicaView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { addToast } = useToast();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +35,18 @@ const FichaTecnicaView: React.FC = () => {
     return <div className="p-8 text-white">Produto não encontrado.</div>;
   }
 
+  const handleDelete = async () => {
+    if (window.confirm(`Tem certeza que deseja excluir a ficha técnica ${product.reference}? Esta ação não pode ser desfeita.`)) {
+      try {
+        await deleteProduct(product.id);
+        addToast("Ficha Técnica excluída com sucesso", "success");
+        navigate('/products'); // Assuming '/products' or '/' is the products page
+      } catch (error) {
+        addToast("Erro ao excluir ficha técnica", "error");
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-dark-bg p-8 font-inter">
       <div className="max-w-4xl mx-auto">
@@ -41,12 +56,20 @@ const FichaTecnicaView: React.FC = () => {
           <Link to="/" className="flex items-center gap-2 text-dark-dim hover:text-dark-bg transition-colors">
             <ArrowLeft size={20} /> Voltar
           </Link>
-          <button 
-            onClick={() => window.print()} 
-            className="flex items-center gap-2 px-4 py-2 bg-dark-bg text-white rounded-lg hover:bg-dark-card transition-colors"
-          >
-            <Printer size={20} /> Imprimir Ficha
-          </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={handleDelete} 
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500/20 transition-colors font-bold"
+            >
+              <Trash size={20} /> Excluir Ficha
+            </button>
+            <button 
+              onClick={() => window.print()} 
+              className="flex items-center gap-2 px-4 py-2 bg-dark-bg text-white rounded-lg hover:bg-dark-card transition-colors"
+            >
+              <Printer size={20} /> Imprimir Ficha
+            </button>
+          </div>
         </div>
 
         {/* Ficha Header */}
