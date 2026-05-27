@@ -315,7 +315,7 @@ def extract_board_id(url_or_id: str) -> str:
 
 
 @router.get("/settings")
-async def get_integrations_settings():
+async def get_integrations_settings(request: Request):
     from dotenv import dotenv_values
     
     env_path = "backend/.env"
@@ -329,7 +329,9 @@ async def get_integrations_settings():
     api_key = config_dict.get("TRELLO_API_KEY") or settings.TRELLO_API_KEY or ""
     token = config_dict.get("TRELLO_TOKEN") or settings.TRELLO_TOKEN or ""
     board_url = config_dict.get("TRELLO_BOARD_URL") or getattr(settings, "TRELLO_BOARD_URL", "") or ""
-    webhook_url = config_dict.get("TRELLO_WEBHOOK_URL") or getattr(settings, "TRELLO_WEBHOOK_URL", "") or "https://stale-nails-float.loca.lt/api/integrations/trello"
+    base_url = str(request.base_url).rstrip("/")
+    default_webhook = f"{base_url}/api/integrations/trello"
+    webhook_url = config_dict.get("TRELLO_WEBHOOK_URL") or getattr(settings, "TRELLO_WEBHOOK_URL", "") or default_webhook
     
     active_boards = []
     if api_key and token:
@@ -366,6 +368,7 @@ async def get_integrations_settings():
 @router.post("/trello/register")
 async def register_trello_webhook(
     payload: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     api_key = payload.get("api_key", "").strip()
@@ -400,8 +403,9 @@ async def register_trello_webhook(
             raise HTTPException(status_code=500, detail=f"Erro de conexão com o Trello: {str(e)}")
             
         # 2. Determine Webhook callback URL
-        if not webhook_url:
-            webhook_url = f"https://stale-nails-float.loca.lt/api/integrations/trello"
+        if not webhook_url or "loca.lt" in webhook_url:
+            base_url = str(request.base_url).rstrip("/")
+            webhook_url = f"{base_url}/api/integrations/trello"
             
         # 3. Check if webhook is already registered on Trello to avoid duplicates
         webhooks_url = f"https://api.trello.com/1/tokens/{token}/webhooks"
