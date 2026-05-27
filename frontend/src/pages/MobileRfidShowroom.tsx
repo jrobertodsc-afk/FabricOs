@@ -103,6 +103,7 @@ export default function MobileRfidShowroom() {
                 id: 'prod-1',
                 reference: 'REF-887',
                 name: 'Vestido Linho Sol',
+                type: 'produto_acabado',
                 base_price: 329.90,
                 materials: [],
                 created_at: new Date().toISOString()
@@ -119,6 +120,7 @@ export default function MobileRfidShowroom() {
                 id: 'prod-2',
                 reference: 'REF-998',
                 name: 'Camisa Algodão Leve',
+                type: 'produto_acabado',
                 base_price: 189.90,
                 materials: [],
                 created_at: new Date().toISOString()
