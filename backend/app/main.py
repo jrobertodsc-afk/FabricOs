@@ -127,6 +127,11 @@ async def spa_fallback(catchall: str):
     if os.path.exists(file_path) and os.path.isfile(file_path):
         return FileResponse(file_path)
         
+    # Se a requisição era para um asset (ex: .js, .css, imagens) que não existe, retorne 404
+    # para evitar que o navegador tente ler o index.html como JavaScript (causando erro de MIME type)
+    if catchall.startswith("assets/") or "." in catchall.split("/")[-1]:
+        return JSONResponse(status_code=404, content={"detail": "Asset not found"})
+        
     if os.path.exists(index_file):
         return FileResponse(index_file)
         
