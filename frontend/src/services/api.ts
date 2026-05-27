@@ -957,6 +957,31 @@ export interface BackofficeClient {
   is_active: boolean;
   is_locked: boolean;
   last_ping_at: string;
+  // Plano e Financeiro
+  plan?: string;
+  plan_name?: string;
+  monthly_price?: number;
+  payment_status?: string;
+  next_billing_date?: string;
+  trial_ends_at?: string | null;
+  created_at?: string;
+}
+
+export interface BackofficeUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  tenant_id: string;
+  tenant_name?: string;
+  is_active?: boolean;
+}
+
+export interface BackofficePlan {
+  plan_name: string;
+  enabled_modules: string[];
+  monthly_price: number;
+  trial_days: number;
 }
 
 const getBackofficeHeaders = () => {
@@ -978,12 +1003,32 @@ export const getBackofficeClients = async () => {
   return response.data;
 };
 
+export const createBackofficeClient = async (data: {
+  client_name: string;
+  admin_email: string;
+  admin_password: string;
+  admin_full_name: string;
+  plan: string;
+}) => {
+  const response = await api.post('/api/backoffice/clients', data, getBackofficeHeaders());
+  return response.data;
+};
+
 export const toggleClientLock = async (tenantId: string) => {
   const response = await api.post<BackofficeClient>(`/api/backoffice/clients/${tenantId}/toggle-lock`, {}, getBackofficeHeaders());
   return response.data;
 };
 
-export const updateClientLicense = async (tenantId: string, data: { client_name?: string; enabled_modules?: string[]; update_channel?: string; is_active?: boolean }) => {
+export const updateClientLicense = async (tenantId: string, data: {
+  client_name?: string;
+  enabled_modules?: string[];
+  update_channel?: string;
+  is_active?: boolean;
+  plan?: string;
+  payment_status?: string;
+  next_billing_date?: string;
+  monthly_price?: number;
+}) => {
   const response = await api.patch<BackofficeClient>(`/api/backoffice/clients/${tenantId}`, data, getBackofficeHeaders());
   return response.data;
 };
@@ -993,6 +1038,43 @@ export const simulateLocalUpdate = async (tenantId: string) => {
   return response.data;
 };
 
+// ---- Gestão de Usuários por Tenant ----
+export const getClientUsers = async (tenantId: string) => {
+  const response = await api.get<BackofficeUser[]>(`/api/backoffice/clients/${tenantId}/users`, getBackofficeHeaders());
+  return response.data;
+};
+
+export const createClientUser = async (tenantId: string, data: {
+  email: string;
+  password: string;
+  full_name: string;
+  role: string;
+}) => {
+  const response = await api.post(`/api/backoffice/clients/${tenantId}/users`, data, getBackofficeHeaders());
+  return response.data;
+};
+
+export const updateClientUser = async (tenantId: string, userId: string, data: {
+  full_name?: string;
+  role?: string;
+  new_password?: string;
+}) => {
+  const response = await api.patch(`/api/backoffice/clients/${tenantId}/users/${userId}`, data, getBackofficeHeaders());
+  return response.data;
+};
+
+export const deleteClientUser = async (tenantId: string, userId: string) => {
+  const response = await api.delete(`/api/backoffice/clients/${tenantId}/users/${userId}`, getBackofficeHeaders());
+  return response.data;
+};
+
+// ---- Planos ----
+export const getBackofficePlans = async () => {
+  const response = await api.get<Record<string, BackofficePlan>>('/api/backoffice/plans', getBackofficeHeaders());
+  return response.data;
+};
+
+// ---- License Status (cliente local) ----
 export interface LicenseStatusResponse {
   tenant_id: string;
   is_locked: boolean;
@@ -1009,5 +1091,3 @@ export const getLicenseStatus = async () => {
 };
 
 export default api;
-
-

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header, Cookie, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel
+from sqlalchemy import select, delete
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -11,6 +11,7 @@ import os
 
 from backend.app.core.database import get_db
 from backend.app.models import models
+from backend.app.core.auth import get_password_hash
 
 router = APIRouter(prefix="/api/backoffice", tags=["FabricOS Central Backoffice"])
 
@@ -48,13 +49,44 @@ Q891HHMaGXxnfFg2My8I8PUF/1LmmIxIOQtFaigEW+V1Hz4hEz7iDiHb2OO0iHlJ
 BACKOFFICE_ADMIN_TOKEN = os.getenv("BACKOFFICE_ADMIN_TOKEN", "admin123")
 
 # Caminho do banco de licenças central:
-# - Na nuvem (Railway): usa /data/backoffice_clients.json (volume persistente montado)
-# - Em dev local: usa a pasta uploads/ relativa ao projeto
 _default_db_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "uploads", "backoffice_clients.json")
 )
 DB_FILE = os.getenv("BACKOFFICE_DB_PATH", _default_db_path)
 
+# =====================================================================
+#  PLANOS DE LICENCIAMENTO PRÉ-DEFINIDOS
+# =====================================================================
+PLANS = {
+    "trial": {
+        "plan_name": "Trial Gratuito",
+        "enabled_modules": ["producao", "logistica", "mobile"],
+        "monthly_price": 0,
+        "trial_days": 15,
+    },
+    "starter": {
+        "plan_name": "Starter",
+        "enabled_modules": ["producao"],
+        "monthly_price": 197,
+        "trial_days": 0,
+    },
+    "professional": {
+        "plan_name": "Professional",
+        "enabled_modules": ["producao", "logistica"],
+        "monthly_price": 397,
+        "trial_days": 0,
+    },
+    "enterprise": {
+        "plan_name": "Enterprise",
+        "enabled_modules": ["producao", "logistica", "mobile"],
+        "monthly_price": 697,
+        "trial_days": 0,
+    },
+}
+
+# =====================================================================
+#  HELPERS: PERSISTÊNCIA JSON
+# =====================================================================
 def load_central_db() -> dict:
     """Carrega os dados das licenças do arquivo JSON persistente."""
     if os.path.exists(DB_FILE):
@@ -74,6 +106,9 @@ def save_central_db(data: dict):
     except Exception as e:
         print(f"Erro ao salvar banco de licenças central: {e}")
 
+# =====================================================================
+#  AUTENTICAÇÃO DO BACKOFFICE
+# =====================================================================
 def verify_admin_token(
     x_backoffice_admin_token: Optional[str] = Header(None),
     backoffice_session: Optional[str] = Cookie(None)
@@ -92,18 +127,16 @@ class BackofficeLoginRequest(BaseModel):
 
 @router.post("/login")
 async def backoffice_login(payload: BackofficeLoginRequest, response: Response):
-    """Endpoint de autenticação do Backoffice Central.
-    Valida a senha administrativa e define um cookie de sessão seguro."""
+    """Endpoint de autenticação do Backoffice Central."""
     if payload.password != BACKOFFICE_ADMIN_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Senha administrativa incorreta."
         )
-    # Define cookie de sessão com validade de 24 horas
     response.set_cookie(
         key="backoffice_session",
         value=BACKOFFICE_ADMIN_TOKEN,
-        max_age=86400,  # 24 horas
+        max_age=86400,
         httponly=False,
         samesite="lax",
         path="/"
@@ -125,8 +158,11 @@ async def backoffice_health():
         "db_file": DB_FILE
     }
 
+# =====================================================================
+#  HELPERS: CRIPTOGRAFIA E LICENCIAMENTO
+# =====================================================================
 def create_backoffice_license_token(tenant_id: str, client_name: str, enabled_modules: List[str], expires_in_days: int = 30) -> str:
-    """Helper no Backoffice para gerar chaves de licença assimétricas assinadas com a chave privada RSA."""
+    """Gera chaves de licença assimétricas assinadas com RSA."""
     payload = {
         "tenant_id": tenant_id,
         "client_name": client_name,
@@ -136,20 +172,11 @@ def create_backoffice_license_token(tenant_id: str, client_name: str, enabled_mo
     }
     return jwt.encode(payload, PRIVATE_KEY_PEM, algorithm="RS256")
 
-class LicenseValidationRequest(BaseModel):
-    tenant_id: str
-    license_key: Optional[str] = None
-
-class LicenseUpdateRequest(BaseModel):
-    client_name: Optional[str] = None
-    enabled_modules: Optional[List[str]] = None
-    update_channel: Optional[str] = None
-    is_active: Optional[bool] = None
-
 def get_client_license_state(tenant_id: str) -> dict:
-    """Retorna o estado da licença do cliente na nossa nuvem, com persistência automática."""
+    """Retorna o estado da licença do cliente, com persistência automática."""
     db_data = load_central_db()
     if tenant_id not in db_data:
+        now = datetime.now(timezone.utc)
         db_data[tenant_id] = {
             "tenant_id": tenant_id,
             "client_name": f"Cliente Filial {tenant_id[:8].upper()}",
@@ -159,11 +186,58 @@ def get_client_license_state(tenant_id: str) -> dict:
             "latest_version": "1.0.0",
             "is_active": True,
             "is_locked": False,
-            "last_ping_at": datetime.now(timezone.utc).isoformat()
+            "last_ping_at": now.isoformat(),
+            # Plano e Financeiro
+            "plan": "starter",
+            "plan_name": "Starter",
+            "monthly_price": 197,
+            "payment_status": "active",  # active, overdue, trial, cancelled
+            "next_billing_date": (now + timedelta(days=30)).isoformat(),
+            "trial_ends_at": None,
+            "created_at": now.isoformat(),
         }
         save_central_db(db_data)
     return db_data[tenant_id]
 
+# =====================================================================
+#  PYDANTIC MODELS
+# =====================================================================
+class LicenseValidationRequest(BaseModel):
+    tenant_id: str
+    license_key: Optional[str] = None
+
+class LicenseUpdateRequest(BaseModel):
+    client_name: Optional[str] = None
+    enabled_modules: Optional[List[str]] = None
+    update_channel: Optional[str] = None
+    is_active: Optional[bool] = None
+    plan: Optional[str] = None
+    payment_status: Optional[str] = None
+    next_billing_date: Optional[str] = None
+    monthly_price: Optional[float] = None
+
+class CreateClientRequest(BaseModel):
+    client_name: str
+    admin_email: str
+    admin_password: str
+    admin_full_name: str
+    plan: str = "trial"  # trial, starter, professional, enterprise
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    role: str = "user"  # admin, manager, user
+
+class UpdateUserRequest(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    new_password: Optional[str] = None
+    is_active: Optional[bool] = None
+
+# =====================================================================
+#  ENDPOINTS: VALIDAÇÃO DE LICENÇA (chamado pelo cliente local)
+# =====================================================================
 @router.post("/license/validate")
 async def validate_license(payload: LicenseValidationRequest):
     """Endpoint que o cliente local consulta periodicamente em segundo plano."""
@@ -176,9 +250,25 @@ async def validate_license(payload: LicenseValidationRequest):
     
     # Atualiza timestamp do último ping recebido
     state["last_ping_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Verifica inadimplência automática
+    payment_status = state.get("payment_status", "active")
+    if payment_status == "overdue":
+        state["is_active"] = False
+        state["is_locked"] = True
+    
+    # Verifica expiração do trial
+    trial_ends = state.get("trial_ends_at")
+    if trial_ends and state.get("plan") == "trial":
+        trial_dt = datetime.fromisoformat(trial_ends)
+        if datetime.now(timezone.utc) > trial_dt:
+            state["is_active"] = False
+            state["is_locked"] = True
+            state["payment_status"] = "trial_expired"
+    
     save_central_db(db_data)
     
-    # Se a licença foi desativada por nós no Backoffice, retorna travado
+    # Se a licença foi desativada, retorna travado
     if not state["is_active"] or state["is_locked"]:
         return {
             "is_active": False,
@@ -186,7 +276,7 @@ async def validate_license(payload: LicenseValidationRequest):
             "detail": "Instância suspensa por pendências financeiras ou expiração."
         }
         
-    # Gera um novo token assinado contendo os módulos e expiração vigentes usando RS256
+    # Gera um novo token assinado
     new_token = create_backoffice_license_token(
         tenant_id=payload.tenant_id,
         client_name=state["client_name"],
@@ -202,11 +292,109 @@ async def validate_license(payload: LicenseValidationRequest):
         "update_channel": state["update_channel"]
     }
 
+# =====================================================================
+#  ENDPOINTS: GESTÃO DE CLIENTES (CRUD)
+# =====================================================================
 @router.get("/clients")
 async def list_backoffice_clients(admin: None = Depends(verify_admin_token)):
-    """Retorna a lista de todas as instâncias de clientes ativas."""
+    """Retorna a lista de todas as instâncias de clientes."""
     db_data = load_central_db()
     return list(db_data.values())
+
+@router.post("/clients")
+async def create_client(
+    payload: CreateClientRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: None = Depends(verify_admin_token)
+):
+    """Cria um novo cliente (Tenant + Usuário Admin) no PostgreSQL e no JSON central."""
+    # Verifica se o e-mail já existe
+    existing = await db.execute(
+        select(models.User).where(models.User.email == payload.admin_email)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"O e-mail '{payload.admin_email}' já está em uso.")
+    
+    # Valida plano
+    plan_config = PLANS.get(payload.plan)
+    if not plan_config:
+        raise HTTPException(status_code=400, detail=f"Plano '{payload.plan}' inválido. Use: trial, starter, professional, enterprise")
+    
+    now = datetime.now(timezone.utc)
+    tenant_id = uuid.uuid4()
+    
+    # 1. Criar Tenant no PostgreSQL
+    new_tenant = models.Tenant(
+        id=tenant_id,
+        name=payload.client_name,
+        is_active=True
+    )
+    db.add(new_tenant)
+    
+    # 2. Criar Usuário Admin no PostgreSQL
+    new_user = models.User(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        email=payload.admin_email,
+        hashed_password=get_password_hash(payload.admin_password),
+        full_name=payload.admin_full_name,
+        role="admin"
+    )
+    db.add(new_user)
+    
+    # 3. Criar LicenseConfig local no PostgreSQL
+    license_token = create_backoffice_license_token(
+        tenant_id=str(tenant_id),
+        client_name=payload.client_name,
+        enabled_modules=plan_config["enabled_modules"],
+        expires_in_days=15 if payload.plan == "trial" else 30
+    )
+    new_license = models.LicenseConfig(
+        tenant_id=tenant_id,
+        license_key=license_token,
+        is_locked=False,
+        current_version="1.0.0",
+        update_channel="stable"
+    )
+    db.add(new_license)
+    
+    await db.commit()
+    
+    # 4. Registrar no JSON central do Backoffice
+    trial_ends = None
+    if payload.plan == "trial":
+        trial_ends = (now + timedelta(days=plan_config["trial_days"])).isoformat()
+    
+    client_state = {
+        "tenant_id": str(tenant_id),
+        "client_name": payload.client_name,
+        "enabled_modules": plan_config["enabled_modules"],
+        "update_channel": "stable",
+        "current_version": "1.0.0",
+        "latest_version": "1.0.0",
+        "is_active": True,
+        "is_locked": False,
+        "last_ping_at": now.isoformat(),
+        # Plano e Financeiro
+        "plan": payload.plan,
+        "plan_name": plan_config["plan_name"],
+        "monthly_price": plan_config["monthly_price"],
+        "payment_status": "trial" if payload.plan == "trial" else "active",
+        "next_billing_date": (now + timedelta(days=30)).isoformat(),
+        "trial_ends_at": trial_ends,
+        "created_at": now.isoformat(),
+    }
+    
+    db_data = load_central_db()
+    db_data[str(tenant_id)] = client_state
+    save_central_db(db_data)
+    
+    return {
+        **client_state,
+        "admin_email": payload.admin_email,
+        "admin_full_name": payload.admin_full_name,
+        "message": f"Cliente '{payload.client_name}' criado com sucesso! Login: {payload.admin_email}"
+    }
 
 @router.post("/clients/{tenant_id}/toggle-lock")
 async def toggle_client_lock(tenant_id: str, admin: None = Depends(verify_admin_token)):
@@ -225,21 +413,21 @@ async def toggle_client_lock(tenant_id: str, admin: None = Depends(verify_admin_
 
 @router.patch("/clients/{tenant_id}", response_model=dict)
 async def update_client_license(tenant_id: str, payload: LicenseUpdateRequest, admin: None = Depends(verify_admin_token)):
-    """Atualiza módulos licenciados ou canais de updates do cliente na nuvem."""
+    """Atualiza módulos, canais, planos e status financeiro do cliente."""
     db_data = load_central_db()
     if tenant_id not in db_data:
         state = get_client_license_state(tenant_id)
         db_data = load_central_db()
     else:
         state = db_data[tenant_id]
-        
+    
+    # Atualiza campos básicos
     if payload.client_name is not None:
         state["client_name"] = payload.client_name
     if payload.enabled_modules is not None:
         state["enabled_modules"] = payload.enabled_modules
     if payload.update_channel is not None:
         state["update_channel"] = payload.update_channel
-        # Ajusta versão de update recomendada com base no canal
         if payload.update_channel == "beta":
             state["latest_version"] = "1.1.0-beta"
         elif payload.update_channel == "dev":
@@ -249,17 +437,195 @@ async def update_client_license(tenant_id: str, payload: LicenseUpdateRequest, a
     if payload.is_active is not None:
         state["is_active"] = payload.is_active
         state["is_locked"] = not payload.is_active
+    
+    # Atualiza plano
+    if payload.plan is not None:
+        plan_config = PLANS.get(payload.plan)
+        if plan_config:
+            state["plan"] = payload.plan
+            state["plan_name"] = plan_config["plan_name"]
+            state["monthly_price"] = plan_config["monthly_price"]
+            state["enabled_modules"] = plan_config["enabled_modules"]
+            if payload.plan == "trial":
+                state["trial_ends_at"] = (datetime.now(timezone.utc) + timedelta(days=plan_config["trial_days"])).isoformat()
+                state["payment_status"] = "trial"
+    
+    # Atualiza campos financeiros
+    if payload.payment_status is not None:
+        state["payment_status"] = payload.payment_status
+        if payload.payment_status == "overdue":
+            state["is_active"] = False
+            state["is_locked"] = True
+        elif payload.payment_status == "active":
+            state["is_active"] = True
+            state["is_locked"] = False
+    if payload.next_billing_date is not None:
+        state["next_billing_date"] = payload.next_billing_date
+    if payload.monthly_price is not None:
+        state["monthly_price"] = payload.monthly_price
         
     save_central_db(db_data)
     return state
 
+# =====================================================================
+#  ENDPOINTS: GESTÃO DE USUÁRIOS POR TENANT
+# =====================================================================
+@router.get("/clients/{tenant_id}/users")
+async def list_tenant_users(
+    tenant_id: str,
+    db: AsyncSession = Depends(get_db),
+    admin: None = Depends(verify_admin_token)
+):
+    """Lista todos os usuários de um tenant específico."""
+    result = await db.execute(
+        select(models.User).where(models.User.tenant_id == uuid.UUID(tenant_id))
+    )
+    users = result.scalars().all()
+    
+    # Busca info do tenant
+    tenant_result = await db.execute(
+        select(models.Tenant).where(models.Tenant.id == uuid.UUID(tenant_id))
+    )
+    tenant = tenant_result.scalar_one_or_none()
+    
+    return [
+        {
+            "id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "role": u.role,
+            "tenant_id": str(u.tenant_id),
+            "tenant_name": tenant.name if tenant else "Desconhecido",
+            "is_active": tenant.is_active if tenant else False,
+        }
+        for u in users
+    ]
+
+@router.post("/clients/{tenant_id}/users")
+async def create_tenant_user(
+    tenant_id: str,
+    payload: CreateUserRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: None = Depends(verify_admin_token)
+):
+    """Cria um novo usuário dentro de um tenant existente."""
+    # Verifica se o tenant existe
+    tenant_result = await db.execute(
+        select(models.Tenant).where(models.Tenant.id == uuid.UUID(tenant_id))
+    )
+    tenant = tenant_result.scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado.")
+    
+    # Verifica se o e-mail já existe
+    existing = await db.execute(
+        select(models.User).where(models.User.email == payload.email)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"O e-mail '{payload.email}' já está em uso.")
+    
+    new_user = models.User(
+        id=uuid.uuid4(),
+        tenant_id=uuid.UUID(tenant_id),
+        email=payload.email,
+        hashed_password=get_password_hash(payload.password),
+        full_name=payload.full_name,
+        role=payload.role
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    return {
+        "id": str(new_user.id),
+        "email": new_user.email,
+        "full_name": new_user.full_name,
+        "role": new_user.role,
+        "tenant_id": tenant_id,
+        "message": f"Usuário '{new_user.full_name}' criado com sucesso!"
+    }
+
+@router.patch("/clients/{tenant_id}/users/{user_id}")
+async def update_tenant_user(
+    tenant_id: str,
+    user_id: str,
+    payload: UpdateUserRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: None = Depends(verify_admin_token)
+):
+    """Atualiza dados de um usuário (nome, role, senha, ativo/inativo)."""
+    result = await db.execute(
+        select(models.User).where(
+            models.User.id == uuid.UUID(user_id),
+            models.User.tenant_id == uuid.UUID(tenant_id)
+        )
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado neste tenant.")
+    
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.role is not None:
+        user.role = payload.role
+    if payload.new_password is not None:
+        user.hashed_password = get_password_hash(payload.new_password)
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "tenant_id": tenant_id,
+        "message": f"Usuário '{user.full_name}' atualizado com sucesso!"
+    }
+
+@router.delete("/clients/{tenant_id}/users/{user_id}")
+async def delete_tenant_user(
+    tenant_id: str,
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    admin: None = Depends(verify_admin_token)
+):
+    """Remove um usuário do tenant."""
+    result = await db.execute(
+        select(models.User).where(
+            models.User.id == uuid.UUID(user_id),
+            models.User.tenant_id == uuid.UUID(tenant_id)
+        )
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado neste tenant.")
+    
+    user_name = user.full_name
+    await db.delete(user)
+    await db.commit()
+    
+    return {"message": f"Usuário '{user_name}' removido com sucesso!", "deleted_id": user_id}
+
+# =====================================================================
+#  ENDPOINTS: PLANOS DISPONÍVEIS
+# =====================================================================
+@router.get("/plans")
+async def list_plans(admin: None = Depends(verify_admin_token)):
+    """Retorna os planos de licenciamento disponíveis."""
+    return PLANS
+
+# =====================================================================
+#  ENDPOINTS: SIMULAÇÃO LOCAL
+# =====================================================================
 @router.post("/clients/{tenant_id}/simulate-local-update")
 async def simulate_local_update(
     tenant_id: str, 
     db: AsyncSession = Depends(get_db),
     admin: None = Depends(verify_admin_token)
 ):
-    """Simula a instalação física da atualização local rodando o script de auto-update."""
+    """Simula a instalação física da atualização local."""
     db_data = load_central_db()
     if tenant_id not in db_data:
         state = get_client_license_state(tenant_id)
@@ -267,7 +633,6 @@ async def simulate_local_update(
     else:
         state = db_data[tenant_id]
     
-    # Atualiza na base de dados SQLite local
     query = select(models.LicenseConfig).where(models.LicenseConfig.tenant_id == uuid.UUID(tenant_id))
     result = await db.execute(query)
     config = result.scalar_one_or_none()
@@ -279,7 +644,6 @@ async def simulate_local_update(
         await db.commit()
         await db.refresh(config)
         
-        # Sincroniza estado da nuvem
         state["current_version"] = state["latest_version"]
         save_central_db(db_data)
         
