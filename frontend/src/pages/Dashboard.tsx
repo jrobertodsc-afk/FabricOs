@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { 
   ChartLineUp, Package, Users, Receipt, Warning, 
   MagnifyingGlass, Plus, ClockCounterClockwise, 
-  ListChecks, Gear, Ruler, ChartBar, Scissors, TShirt, CoatHanger
+  ListChecks, Gear, Ruler, ChartBar, Scissors, TShirt, CoatHanger, List
 } from '@phosphor-icons/react';
 import { 
   getWithdrawals, getProductionOrders, 
@@ -323,12 +323,43 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <div className="flex h-screen bg-dark-bg text-white font-inter overflow-hidden">
-      <Sidebar view={view} setView={setView} />
+    <div className="flex h-screen bg-dark-bg text-white font-inter overflow-hidden relative">
+      
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Hidden on mobile by default, toggled via isSidebarOpen */}
+      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <Sidebar view={view} setView={(v) => { setView(v); setIsSidebarOpen(false); }} />
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-dark-bg to-dark-card/20">
+      <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-dark-bg to-dark-card/20 w-full lg:w-auto">
+        
+        {/* Mobile Header with Hamburger */}
+        <div className="lg:hidden p-4 border-b border-dark-border flex items-center justify-between bg-dark-card sticky top-0 z-30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <TShirt size={18} weight="bold" className="text-white" />
+            </div>
+            <h1 className="text-lg font-black font-outfit text-white">FabricOS</h1>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 bg-dark-bg rounded-lg border border-dark-border text-white"
+          >
+            <List size={24} />
+          </button>
+        </div>
+
         <div className="flex-1 overflow-hidden flex flex-col">
           {view === 'dashboard' && renderDashboard()}
           {view === 'withdrawals' && <Withdrawals />}
