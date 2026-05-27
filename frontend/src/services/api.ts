@@ -289,6 +289,27 @@ export interface Settlement {
   nf_number?: string;
   status: string;
   created_at: string;
+  paid_at?: string;
+}
+
+export interface QualityRecordPayload {
+  defect_type: string;
+  quantity: number;
+  notes?: string;
+}
+
+export interface QualityRecord extends QualityRecordPayload {
+  id: string;
+  order_id?: string;
+  withdrawal_id?: string;
+  partner_id?: string;
+  created_at: string;
+}
+
+export interface QualityStats {
+  total_produced: number;
+  total_defects: number;
+  defect_rate: number;
 }
 
 export interface SettlementCreatePayload {
@@ -397,9 +418,19 @@ export const deleteProductionOrder = async (id: string) => {
   await api.delete(`/api/production/orders/${id}`);
 };
 
-// CORRIGIDO: URL estava incorreta (/api/production/scan/:id, o correto é /api/production/orders/:id/scan)
 export const scanProductionOrder = async (orderNumber: string) => {
   const response = await api.post<ProductionOrder>(`/api/production/orders/${orderNumber}/scan`);
+  return response.data;
+};
+
+// ---- Quality Control ----
+export const registerQualityRecord = async (orderId: string, data: QualityRecordPayload) => {
+  const response = await api.post<QualityRecord>(`/api/production/orders/${orderId}/quality`, data);
+  return response.data;
+};
+
+export const getQualityStats = async () => {
+  const response = await api.get<QualityStats>('/api/production/quality-stats');
   return response.data;
 };
 

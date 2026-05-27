@@ -129,14 +129,17 @@ class QualityRecord(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
-    withdrawal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("withdrawals.id"))
-    partner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("partners.id"))
+    order_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("production_orders.id"), nullable=True)
+    withdrawal_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("withdrawals.id"), nullable=True)
+    partner_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("partners.id"), nullable=True)
 
     defect_type: Mapped[str] = mapped_column(String(100))
     quantity: Mapped[int] = mapped_column(Integer)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now_utc)
+    
+    order: Mapped[Optional["ProductionOrder"]] = relationship(lazy="selectin")
 
 
 class Withdrawal(Base):

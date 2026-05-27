@@ -5,8 +5,11 @@ import type { ProductionOrder, Partner, Product } from '../services/api';
 import OPLabel from '../components/OPLabel';
 import QRScanner from '../components/QRScanner';
 import ConfirmDialog from '../components/ConfirmDialog';
+import QualityModal from '../components/QualityModal';
 import { useToast } from '../contexts/ToastContext';
-import { QrCode, Scan } from '@phosphor-icons/react';
+import { QrCode, Scan, WarningCircle } from '@phosphor-icons/react';
+import { registerQualityRecord } from '../services/api';
+import type { QualityRecordPayload } from '../services/api';
 
 
 
@@ -43,6 +46,10 @@ const ProductionOrders: React.FC = () => {
   const [completedOrder, setCompletedOrder] = useState<ProductionOrder | null>(null);
   const [selectedStockProductId, setSelectedStockProductId] = useState('');
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
+
+  // Quality Control State
+  const [isQualityModalOpen, setIsQualityModalOpen] = useState(false);
+  const [selectedOrderForQuality, setSelectedOrderForQuality] = useState<ProductionOrder | null>(null);
 
   const { addToast } = useToast();
 
@@ -150,6 +157,19 @@ const ProductionOrders: React.FC = () => {
     setIsLabelOpen(true);
   };
 
+  const handleQualitySubmit = async (data: QualityRecordPayload) => {
+    if (!selectedOrderForQuality) return;
+    try {
+      await registerQualityRecord(selectedOrderForQuality.id, data);
+      addToast("Defeito registrado com sucesso!", "success");
+      setIsQualityModalOpen(false);
+      setSelectedOrderForQuality(null);
+    } catch (error) {
+      console.error(error);
+      addToast("Erro ao registrar qualidade", "error");
+    }
+  };
+
   return (
     <div className="p-8 flex flex-col h-screen overflow-hidden">
       <header className="flex justify-between items-center mb-8 flex-shrink-0">
@@ -216,6 +236,13 @@ const ProductionOrders: React.FC = () => {
                           title="Imprimir Etiqueta"
                         >
                           <QrCode size={16} />
+                        </button>
+                        <button 
+                          onClick={() => { setSelectedOrderForQuality(order); setIsQualityModalOpen(true); }}
+                          className="p-1.5 text-dark-dim hover:text-warning transition-colors bg-white/5 rounded-lg"
+                          title="Controle de Qualidade"
+                        >
+                          <WarningCircle size={16} />
                         </button>
                         <button 
                           onClick={() => { setOrderToDelete(order); setIsDeleteOpen(true); }}
@@ -399,7 +426,14 @@ const ProductionOrders: React.FC = () => {
         onScan={handleScan}
       />
 
-      <ConfirmDialog 
+      <QualityModal 
+        isOpen={isQualityModalOpen}
+        onClose={() => { setIsQualityModalOpen(false); setSelectedOrderForQuality(null); }}
+        onSubmit={handleQualitySubmit}
+        orderNumber={selectedOrderForQuality?.order_number || ''}
+      />
+
+      <ConfirmDialog  
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleDelete}

@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { ChartBar, DownloadSimple, Funnel, Users, Calendar, TrendUp, WarningCircle, CheckCircle } from '@phosphor-icons/react';
-import { getProductionOrders, getPartners, getSettlements } from '../services/api';
-import type { ProductionOrder, Partner, Settlement } from '../services/api';
+import { getProductionOrders, getPartners, getSettlements, getQualityStats } from '../services/api';
+import type { ProductionOrder, Partner, Settlement, QualityStats } from '../services/api';
 
 const Reports: React.FC = () => {
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [qualityStats, setQualityStats] = useState<QualityStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [oData, pData, sData] = await Promise.all([
+        const [oData, pData, sData, qData] = await Promise.all([
           getProductionOrders(),
           getPartners(),
-          getSettlements()
+          getSettlements(),
+          getQualityStats()
         ]);
         setOrders(oData.items);
         setPartners(pData);
         setSettlements(sData);
+        setQualityStats(qData);
       } catch (error) {
         console.error("Failed to load report data", error);
       } finally {
@@ -60,7 +63,9 @@ const Reports: React.FC = () => {
          </div>
          <div className="card border-l-4 border-l-warning">
             <p className="text-xs font-bold text-dark-dim uppercase mb-1">Taxa de Defeitos</p>
-            <h2 className="text-3xl font-black font-outfit text-warning">2.4%</h2>
+            <h2 className="text-3xl font-black font-outfit text-warning">
+               {qualityStats ? qualityStats.defect_rate.toFixed(1) : '0'}%
+            </h2>
             <div className="flex items-center gap-1 text-warning text-[10px] mt-2 font-bold">
                <WarningCircle size={14} /> Meta: abaixo de 2%
             </div>

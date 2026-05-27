@@ -209,6 +209,14 @@ const Pilotage: React.FC = () => {
           </div>
 
           <button 
+            onClick={() => window.open('https://trello.com/b/uX9H1e3o/fabric-os-pilotagem', '_blank')} 
+            className="flex items-center gap-2 px-4 py-2 bg-[#0052CC]/10 text-[#0052CC] rounded-xl hover:bg-[#0052CC]/20 transition-all font-bold text-sm"
+          >
+            <ArrowSquareOut size={18} weight="bold" />
+            Abrir Trello
+          </button>
+          
+          <button 
             onClick={openCreate} 
             className="btn-primary py-2"
           >

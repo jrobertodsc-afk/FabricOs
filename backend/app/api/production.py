@@ -575,3 +575,65 @@ async def confirm_xml_reconciliation(
         logger.error(f"Error in xml-confirm: {e}")
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/orders/{order_id}/quality", response_model=schemas.QualityRecord)
+async def create_quality_record(
+    order_id: uuid.UUID,
+    quality_in: schemas.QualityRecordCreate,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    query = select(models.ProductionOrder).where(
+        models.ProductionOrder.id == order_id,
+        models.ProductionOrder.tenant_id == tenant_id
+    )
+    result = await db.execute(query)
+    order = result.scalar_one_or_none()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    new_record = models.QualityRecord(
+        tenant_id=tenant_id,
+        order_id=order.id,
+        partner_id=order.partner_id,
+        defect_type=quality_in.defect_type,
+        quantity=quality_in.quantity,
+        notes=quality_in.notes
+    )
+    db.add(new_record)
+    await db.commit()
+    await db.refresh(new_record)
+    return new_record
+
+@router.get("/quality-stats")
+async def get_quality_stats(
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    await set_tenant_id(db, str(tenant_id))
+    
+    # Total produzido (Soma das total_quantity das OPs finalizadas)
+    total_produced_query = select(func.sum(models.ProductionOrder.total_quantity)).where(
+        models.ProductionOrder.tenant_id == tenant_id,
+        models.ProductionOrder.current_stage == 'Finalizado'
+    )
+    total_produced = (await db.execute(total_produced_query)).scalar() or 0
+    
+    # Total de defeitos registrados
+    total_defects_query = select(func.sum(models.QualityRecord.quantity)).where(
+        models.QualityRecord.tenant_id == tenant_id
+    )
+    total_defects = (await db.execute(total_defects_query)).scalar() or 0
+    
+    defect_rate = 0
+    if total_produced > 0:
+        defect_rate = (total_defects / total_produced) * 100
+        
+    return {
+        "total_produced": total_produced,
+        "total_defects": total_defects,
+        "defect_rate": round(defect_rate, 2)
+    }
+

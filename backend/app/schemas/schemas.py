@@ -240,6 +240,7 @@ class FinancialSummary(BaseModel):
 class Settlement(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
+    tenant_id: UUID
     order_id: UUID
     partner_id: UUID
     total_amount: float
@@ -247,6 +248,24 @@ class Settlement(BaseModel):
     net_amount: float
     nf_number: Optional[str] = None
     status: str
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+
+class QualityRecordBase(BaseModel):
+    defect_type: str
+    quantity: int
+    notes: Optional[str] = None
+    
+class QualityRecordCreate(QualityRecordBase):
+    pass
+
+class QualityRecord(QualityRecordBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    tenant_id: UUID
+    order_id: Optional[UUID] = None
+    withdrawal_id: Optional[UUID] = None
+    partner_id: Optional[UUID] = None
     created_at: datetime
 
 class Token(BaseModel):
