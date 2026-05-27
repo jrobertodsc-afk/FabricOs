@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ChatCircleDots, X, PaperPlaneRight, Bug, Lightbulb, Question } from '@phosphor-icons/react';
 import { sendFeedback } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
 const FeedbackWidget: React.FC = () => {
@@ -10,7 +9,6 @@ const FeedbackWidget: React.FC = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { user } = useAuth();
   const { addToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,11 +17,14 @@ const FeedbackWidget: React.FC = () => {
     
     setLoading(true);
     try {
+      const userEmail = localStorage.getItem('fabricos_user_email') || 'desconhecido';
+      const userName = localStorage.getItem('fabricos_user_name') || 'Desconhecido';
+
       await sendFeedback({
         type,
         message,
-        user_email: user?.email || 'desconhecido',
-        user_name: user?.full_name || 'Desconhecido'
+        user_email: userEmail,
+        user_name: userName
       });
       addToast("Mensagem enviada com sucesso! Nossa equipe foi notificada.", "success");
       setIsOpen(false);
