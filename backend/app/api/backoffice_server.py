@@ -249,19 +249,44 @@ async def validate_license(payload: LicenseValidationRequest):
         state = db_data[payload.tenant_id]
     
     # Atualiza timestamp do último ping recebido
-    state["last_ping_at"] = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
+    state["last_ping_at"] = now.isoformat()
     
-    # Verifica inadimplência automática
+    # Verifica inadimplência automática com carência de 5 dias
     payment_status = state.get("payment_status", "active")
+    next_billing_date_str = state.get("next_billing_date")
+    
+    grace_period_active = False
+    grace_days_left = 0
+    
     if payment_status == "overdue":
-        state["is_active"] = False
-        state["is_locked"] = True
+        if next_billing_date_str:
+            due_date = datetime.fromisoformat(next_billing_date_str)
+            if due_date.tzinfo is None:
+                due_date = due_date.replace(tzinfo=timezone.utc)
+            
+            days_overdue = (now - due_date).days
+            if 0 <= days_overdue <= 5:
+                # Dentro da carência de 5 dias
+                state["is_active"] = True
+                state["is_locked"] = False
+                grace_period_active = True
+                grace_days_left = 5 - days_overdue
+            else:
+                # Estourou a carência ou já estava muito atrasado
+                state["is_active"] = False
+                state["is_locked"] = True
+        else:
+            state["is_active"] = False
+            state["is_locked"] = True
     
     # Verifica expiração do trial
     trial_ends = state.get("trial_ends_at")
     if trial_ends and state.get("plan") == "trial":
         trial_dt = datetime.fromisoformat(trial_ends)
-        if datetime.now(timezone.utc) > trial_dt:
+        if trial_dt.tzinfo is None:
+            trial_dt = trial_dt.replace(tzinfo=timezone.utc)
+        if now > trial_dt:
             state["is_active"] = False
             state["is_locked"] = True
             state["payment_status"] = "trial_expired"
@@ -289,7 +314,9 @@ async def validate_license(payload: LicenseValidationRequest):
         "is_locked": False,
         "license_key": new_token,
         "latest_version": state["latest_version"],
-        "update_channel": state["update_channel"]
+        "update_channel": state["update_channel"],
+        "grace_period_active": grace_period_active,
+        "grace_days_left": grace_days_left
     }
 
 # =====================================================================

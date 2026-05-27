@@ -109,12 +109,14 @@ async def ping_central_backoffice(db: AsyncSession, config: models.LicenseConfig
             
             db.add(config)
             await db.commit()
+            return data
             
         elif response.status_code == 403:
             # Trava instantânea
             config.is_locked = True
             db.add(config)
             await db.commit()
+            return {}
             
     except Exception as e:
         # Falha de Conexão (Ambiente Offline)
@@ -135,6 +137,8 @@ async def ping_central_backoffice(db: AsyncSession, config: models.LicenseConfig
                 db.add(config)
                 await db.commit()
                 logger.error(f"LOCKDOWN ATIVO: Instância offline por mais de 72 horas. Bloqueando operações.")
+        
+        return {}
 
 class LicenseChecker:
     def __init__(self, required_module: str):

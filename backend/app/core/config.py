@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     TRELLO_TOKEN: str = ""
     TRELLO_BOARD_URL: str = ""
     TRELLO_WEBHOOK_URL: str = ""
+    # Telegram Integration
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
 
     @property
     def cors_origins_list(self) -> List[str]:

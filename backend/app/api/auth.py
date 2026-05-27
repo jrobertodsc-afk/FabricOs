@@ -51,7 +51,7 @@ async def get_license_status(
     
     # Realiza ping rápido para sincronizar com o Backoffice central
     from backend.app.core.license_middleware import ping_central_backoffice
-    await ping_central_backoffice(db, config)
+    ping_data = await ping_central_backoffice(db, config)
     
     enabled_modules = []
     try:
@@ -68,5 +68,7 @@ async def get_license_status(
         "update_channel": config.update_channel,
         "last_verified_at": config.last_verified_at.isoformat() if config.last_verified_at else None,
         "offline_grace_started_at": config.offline_grace_started_at.isoformat() if config.offline_grace_started_at else None,
+        "grace_period_active": ping_data.get("grace_period_active", False) if ping_data else False,
+        "grace_days_left": ping_data.get("grace_days_left", 0) if ping_data else 0,
     }
 

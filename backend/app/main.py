@@ -67,6 +67,19 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     sem expor stack traces internos para o cliente em produção.
     """
     logger.exception(f"Unhandled error on {request.method} {request.url}: {exc}")
+    
+    # Envia notificação pro Telegram
+    try:
+        from backend.app.core.telegram import send_telegram_message
+        msg = (
+            f"🚨 <b>ERRO 500 (CRASH) NO SISTEMA</b> 🚨\n\n"
+            f"<b>URL:</b> {request.method} {request.url.path}\n"
+            f"<b>Erro:</b> {str(exc)[:200]}\n"
+        )
+        send_telegram_message(msg)
+    except Exception as e:
+        logger.error(f"Erro ao enviar notificação de crash pro Telegram: {e}")
+
     return JSONResponse(
         status_code=500,
         content={"detail": "Erro interno no servidor. Tente novamente em instantes."},

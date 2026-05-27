@@ -9,6 +9,8 @@ interface LicenseContextType {
   enabledModules: string[];
   currentVersion: string;
   loading: boolean;
+  gracePeriodActive: boolean;
+  graceDaysLeft: number;
   refreshLicense: () => Promise<void>;
 }
 
@@ -20,6 +22,8 @@ export const LicenseProvider = ({ children }: { children: ReactNode }) => {
   const [enabledModules, setEnabledModules] = useState<string[]>([]);
   const [currentVersion, setCurrentVersion] = useState('1.0.0');
   const [loading, setLoading] = useState(true);
+  const [gracePeriodActive, setGracePeriodActive] = useState(false);
+  const [graceDaysLeft, setGraceDaysLeft] = useState(0);
 
   const refreshLicense = async () => {
     const token = localStorage.getItem('fabricos_token');
@@ -33,6 +37,9 @@ export const LicenseProvider = ({ children }: { children: ReactNode }) => {
       setIsLocked(data.is_locked);
       setEnabledModules(data.enabled_modules || []);
       setCurrentVersion(data.current_version || '1.0.0');
+      setGracePeriodActive(data.grace_period_active || false);
+      setGraceDaysLeft(data.grace_days_left || 0);
+      
       if (data.is_locked) {
         setErrorMessage("Instância suspensa por pendências financeiras ou expiração. Entre em contato com a FabricOS.");
       } else {
@@ -96,6 +103,8 @@ export const LicenseProvider = ({ children }: { children: ReactNode }) => {
         enabledModules, 
         currentVersion, 
         loading, 
+        gracePeriodActive,
+        graceDaysLeft,
         refreshLicense 
       }}
     >

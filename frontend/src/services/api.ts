@@ -1074,6 +1074,12 @@ export const getBackofficePlans = async () => {
   return response.data;
 };
 
+// ---- System / Feedback ----
+export const sendFeedback = async (data: { type: string; message: string; user_email: string; user_name: string }) => {
+  const response = await api.post('/api/system/feedback', data);
+  return response.data;
+};
+
 // ---- License Status (cliente local) ----
 export interface LicenseStatusResponse {
   tenant_id: string;
@@ -1083,6 +1089,8 @@ export interface LicenseStatusResponse {
   update_channel: string;
   last_verified_at: string | null;
   offline_grace_started_at: string | null;
+  grace_period_active?: boolean;
+  grace_days_left?: number;
 }
 
 export const getLicenseStatus = async () => {
