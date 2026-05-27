@@ -21,6 +21,21 @@ async def auto_initialize_db():
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            
+            # Migrations para adicionar colunas em tabelas existentes
+            # Como SQLAlchemy create_all não altera tabelas existentes, forçamos os ALTER TABLEs.
+            try:
+                await conn.execute(text("ALTER TABLE products ADD COLUMN type VARCHAR(50) DEFAULT 'produto_acabado'"))
+                logger.info("Coluna 'type' adicionada à tabela products.")
+            except Exception:
+                pass # Coluna já existe
+                
+            try:
+                await conn.execute(text("ALTER TABLE withdrawals ADD COLUMN product_id VARCHAR(36)"))
+                logger.info("Coluna 'product_id' adicionada à tabela withdrawals.")
+            except Exception:
+                pass # Coluna já existe
+
         logger.info("Tabelas do banco de dados verificadas/criadas com sucesso!")
     except Exception as e:
         logger.error(f"Falha ao rodar create_all no startup: {e}")
