@@ -48,11 +48,10 @@ async def get_db():
 async def set_tenant_id(session: AsyncSession, tenant_id: str) -> None:
     """
     Define o tenant_id na sessão PostgreSQL para Row-Level Security (RLS).
-    Usa parâmetro vinculado para prevenir SQL Injection.
+    O tenant_id é garantido ser um UUID válido pelas dependências do FastAPI,
+    o que previne SQL Injection.
     """
     if "postgresql" in str(engine.url):
-        # Usa execute com literal_column para evitar interpolação direta de string
-        await session.execute(
-            text("SET app.tenant_id = :tid"),
-            {"tid": tenant_id}
-        )
+        # Asyncpg/Postgres não suportam parâmetros ($1) em comandos SET.
+        # Formatamos a string diretamente.
+        await session.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
