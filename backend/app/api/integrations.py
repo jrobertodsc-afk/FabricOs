@@ -330,6 +330,8 @@ async def get_integrations_settings(request: Request):
     token = config_dict.get("TRELLO_TOKEN") or settings.TRELLO_TOKEN or ""
     board_url = config_dict.get("TRELLO_BOARD_URL") or getattr(settings, "TRELLO_BOARD_URL", "") or ""
     base_url = str(request.base_url).rstrip("/")
+    if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
+        base_url = base_url.replace("http://", "https://")
     default_webhook = f"{base_url}/api/integrations/trello"
     webhook_url = config_dict.get("TRELLO_WEBHOOK_URL") or getattr(settings, "TRELLO_WEBHOOK_URL", "") or default_webhook
     
@@ -405,6 +407,8 @@ async def register_trello_webhook(
         # 2. Determine Webhook callback URL
         if not webhook_url or "loca.lt" in webhook_url:
             base_url = str(request.base_url).rstrip("/")
+            if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
+                base_url = base_url.replace("http://", "https://")
             webhook_url = f"{base_url}/api/integrations/trello"
             
         # 3. Check if webhook is already registered on Trello to avoid duplicates
