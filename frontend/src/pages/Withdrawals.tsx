@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Package, User, WhatsappLogo, CheckCircle, EnvelopeSimple, Camera, QrCode, X } from '@phosphor-icons/react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getWithdrawals, getPartners, returnWithdrawal } from '../services/api';
+import { getWithdrawals, getPartners, returnWithdrawal, API_BASE_URL } from '../services/api';
 import type { Withdrawal, Partner, ReturnPayload } from '../services/api';
 import ReturnModal from '../components/ReturnModal';
 import { useToast } from '../contexts/ToastContext';
@@ -222,7 +222,7 @@ const Withdrawals: React.FC = () => {
                         </button>
                         {w.photo_urls && w.photo_urls.length > 0 && (
                           <button 
-                            onClick={() => window.open(`http://127.0.0.1:8000${w.photo_urls![0]}`, '_blank')}
+                            onClick={() => window.open(`${API_BASE_URL}${w.photo_urls![0]}`, '_blank')}
                             className="p-2 bg-info/10 text-info rounded-lg hover:bg-info/20 transition-colors"
                             title="Ver Fotos"
                           >

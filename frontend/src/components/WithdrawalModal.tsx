@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, SpinnerGap } from '@phosphor-icons/react';
 import SignatureCanvas from 'react-signature-canvas';
-import { uploadImage } from '../services/api';
+import { uploadImage, getProducts, API_BASE_URL } from '../services/api';
+import type { Product } from '../services/api';
 
 const SigCanvas = (SignatureCanvas as any).default || SignatureCanvas;
 
@@ -44,6 +45,13 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
   });
 
   const [uploading, setUploading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      getProducts().then(setProducts).catch(console.error);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -149,11 +157,17 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
               <input 
                 type="text" 
                 required
+                list="product-list"
                 placeholder="Ex: Vestido Flora"
                 className="bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none"
                 value={formData.item_name}
                 onChange={e => setFormData({...formData, item_name: e.target.value})}
               />
+              <datalist id="product-list">
+                {products.map(p => (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
             </div>
           </div>
 
@@ -282,7 +296,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             <div className="flex flex-wrap gap-4 items-center">
               {formData.photo_urls.map((url, i) => (
                 <div key={i} className="w-16 h-16 rounded-xl border border-dark-border overflow-hidden bg-dark-bg relative group">
-                  <img src={`http://127.0.0.1:8000${url}`} alt="Upload" className="w-full h-full object-cover" />
+                  <img src={`${API_BASE_URL}${url}`} alt="Upload" className="w-full h-full object-cover" />
                   <button 
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, photo_urls: prev.photo_urls.filter((_, idx) => idx !== i) }))}

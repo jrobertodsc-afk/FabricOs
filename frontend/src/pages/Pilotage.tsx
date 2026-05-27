@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Tag, Plus, PencilSimple, CheckCircle, WarningCircle, Eye, Image, ArrowsClockwise, ArrowSquareOut, Notebook, MagnifyingGlass } from '@phosphor-icons/react';
-import { getPilotageCards, createPilotageCard, updatePilotageCard, sendPilotageToAcervo, uploadImage } from '../services/api';
+import { getPilotageCards, createPilotageCard, updatePilotageCard, sendPilotageToAcervo, uploadImage, API_BASE_URL } from '../services/api';
 import type { PilotageCard } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
 const getFullPhotoUrl = (url?: string) => {
   if (!url) return '';

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '');
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -494,7 +494,7 @@ export interface FinishedStockItem {
   id: string;
   tenant_id: string;
   product_id: string;
-  stock_type: 'producao' | 'acervo';
+  stock_type: 'producao' | 'acervo' | 'piloto';
   size_grade: Record<string, number>;
   last_updated: string;
   product?: Product;
@@ -504,7 +504,7 @@ export interface FinishedStockMovement {
   id: string;
   tenant_id: string;
   product_id: string;
-  stock_type: 'producao' | 'acervo';
+  stock_type: 'producao' | 'acervo' | 'piloto';
   movement_type: 'entrada' | 'saida';
   quantity_grade: Record<string, number>;
   total_quantity: number;
@@ -516,7 +516,7 @@ export interface FinishedStockMovement {
 
 export interface FinishedStockMovementCreatePayload {
   product_id: string;
-  stock_type: 'producao' | 'acervo';
+  stock_type: 'producao' | 'acervo' | 'piloto';
   movement_type: 'entrada' | 'saida';
   quantity_grade: Record<string, number>;
   description: string;

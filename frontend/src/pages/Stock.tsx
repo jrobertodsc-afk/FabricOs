@@ -9,7 +9,7 @@ const Stock: React.FC = () => {
   const [movements, setMovements] = useState<FinishedStockMovement[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'producao' | 'acervo'>('producao');
+  const [activeTab, setActiveTab] = useState<'producao' | 'acervo' | 'piloto'>('producao');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Modals & Panels
@@ -177,7 +177,13 @@ const Stock: React.FC = () => {
           onClick={() => setActiveTab('acervo')}
           className={`px-6 py-3 font-outfit font-bold text-sm transition-all border-b-2 -mb-[2px] ${activeTab === 'acervo' ? 'border-primary text-primary' : 'border-transparent text-dark-dim hover:text-white'}`}
         >
-          Estoque de Acervo (Showroom / Pilotos)
+          Acervo (Amostras)
+        </button>
+        <button 
+          onClick={() => setActiveTab('piloto')}
+          className={`px-6 py-3 font-outfit font-bold text-sm transition-all border-b-2 -mb-[2px] ${activeTab === 'piloto' ? 'border-primary text-primary' : 'border-transparent text-dark-dim hover:text-white'}`}
+        >
+          Peças Piloto
         </button>
       </div>
 
@@ -260,8 +266,8 @@ const Stock: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-dark-card border border-dark-border w-full max-w-xl rounded-2xl p-6 h-[90vh] flex flex-col animate-scale-up">
             <h2 className="text-xl font-bold mb-1 font-outfit">Nova Movimentação de Estoque</h2>
-            <p className="text-xs text-dark-dim mb-6">
-              Registrar entrada ou saída manual no estoque: <strong className="text-primary">{activeTab === 'producao' ? 'Comercial' : 'Acervo'}</strong>
+            <p className="text-sm text-dark-dim mb-6">
+              Registrar entrada ou saída manual no estoque: <strong className="text-primary">{activeTab === 'producao' ? 'Comercial' : activeTab === 'acervo' ? 'Acervo' : 'Piloto'}</strong>
             </p>
 
             <form onSubmit={handleAdjustStock} className="space-y-4 flex-1 overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">

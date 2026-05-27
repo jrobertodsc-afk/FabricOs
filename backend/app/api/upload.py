@@ -7,7 +7,7 @@ from backend.app.api.deps import get_current_tenant_id
 
 router = APIRouter(prefix="/api/upload", tags=["Upload"])
 
-UPLOAD_DIR = "backend/uploads"
+UPLOAD_DIR = "/data/uploads" if os.path.exists("/data") else "backend/uploads"
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_DIR, exist_ok=True)

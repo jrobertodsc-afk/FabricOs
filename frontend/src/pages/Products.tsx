@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Plus, Ruler, ListChecks, ArrowLeft, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
-import { getProducts, getMaterials, createProduct, createMaterial, updateProduct, deleteProduct } from '../services/api';
+import { getProducts, getMaterials, createProduct, createMaterial, updateProduct, deleteProduct, adjustFinishedStock, createPilotageCard } from '../services/api';
 import type { Product, Material } from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
@@ -17,7 +17,10 @@ const Products: React.FC = () => {
     name: '',
     description: '',
     base_price: 0,
-    materials: [] as { material_id: string, quantity: number }[]
+    materials: [] as { material_id: string, quantity: number }[],
+    classification: 'produto_acabado' as 'produto_acabado' | 'acervo' | 'piloto',
+    feedStock: false,
+    stockQuantity: 1
   });
 
   const [newMaterial, setNewMaterial] = useState({
@@ -57,15 +60,58 @@ const Products: React.FC = () => {
     e.preventDefault();
     try {
       if (editingProduct) {
-        await updateProduct(editingProduct.id, newProduct);
+        await updateProduct(editingProduct.id, {
+          reference: newProduct.reference,
+          name: newProduct.name,
+          description: newProduct.description,
+          base_price: newProduct.base_price,
+          materials: newProduct.materials
+        });
         addToast("Ficha Técnica atualizada com sucesso", "success");
       } else {
-        await createProduct(newProduct);
+        const createdProduct = await createProduct({
+          reference: newProduct.reference,
+          name: newProduct.name,
+          description: newProduct.description,
+          base_price: newProduct.base_price,
+          materials: newProduct.materials
+        });
+        
+        // Feed stock if requested
+        if (newProduct.feedStock && newProduct.stockQuantity > 0) {
+          const stockTypeMap: Record<string, 'producao' | 'acervo' | 'piloto'> = {
+            'produto_acabado': 'producao',
+            'acervo': 'acervo',
+            'piloto': 'piloto'
+          };
+          
+          await adjustFinishedStock({
+            product_id: createdProduct.id,
+            stock_type: stockTypeMap[newProduct.classification],
+            movement_type: 'entrada',
+            quantity_grade: { 'U': newProduct.stockQuantity },
+            description: 'Cadastro inicial de peça'
+          });
+        }
+        
+        // Generate Pilotage Card if it's a pilot
+        if (newProduct.classification === 'piloto') {
+          await createPilotageCard({
+            model_name: createdProduct.name,
+            raw_material: 'A definir',
+            family: 'A definir',
+            pilot_name: 'A definir',
+            patternmaker_name: 'A definir',
+            size: 'A definir',
+            status: 'em_ajuste'
+          });
+        }
+
         addToast("Ficha Técnica cadastrada com sucesso", "success");
       }
       setIsProductModalOpen(false);
       setEditingProduct(null);
-      setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [] });
+      setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [], classification: 'produto_acabado', feedStock: false, stockQuantity: 1 });
       loadData();
     } catch (error) {
       addToast(editingProduct ? "Erro ao atualizar ficha técnica" : "Erro ao cadastrar ficha técnica", "error");
@@ -95,7 +141,10 @@ const Products: React.FC = () => {
       materials: product.materials.map(m => ({
         material_id: m.material_id,
         quantity: m.quantity
-      }))
+      })),
+      classification: 'produto_acabado',
+      feedStock: false,
+      stockQuantity: 1
     });
     setIsProductModalOpen(true);
   };
@@ -150,7 +199,7 @@ const Products: React.FC = () => {
           <button 
             onClick={() => {
               setEditingProduct(null);
-              setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [] });
+              setNewProduct({ reference: '', name: '', description: '', base_price: 0, materials: [], classification: 'produto_acabado', feedStock: false, stockQuantity: 1 });
               setIsProductModalOpen(true);
             }} 
             className="btn-primary py-2"
@@ -273,6 +322,55 @@ const Products: React.FC = () => {
                   <label className="text-xs text-dark-dim mb-1 block">Descrição / Notas de Modelagem</label>
                   <textarea className="w-full bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none h-20 text-sm" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})}></textarea>
                </div>
+
+               {!editingProduct && (
+                 <div className="bg-white/5 border border-dark-border rounded-xl p-4 mt-4 space-y-4">
+                   <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Package size={18} /> Configuração de Peça</h3>
+                   
+                   <div>
+                     <label className="text-xs text-dark-dim mb-1 block">Classificação (Apenas Novo Cadastro)</label>
+                     <select 
+                       className="w-full bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none"
+                       value={newProduct.classification}
+                       onChange={e => setNewProduct({...newProduct, classification: e.target.value as any})}
+                     >
+                       <option value="produto_acabado">Produto Acabado (Estoque Comercial)</option>
+                       <option value="acervo">Peça de Acervo</option>
+                       <option value="piloto">Peça Piloto</option>
+                     </select>
+                     {newProduct.classification === 'piloto' && (
+                       <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                         * A ficha de pilotagem será criada automaticamente.
+                       </p>
+                     )}
+                   </div>
+
+                   <div className="flex items-center gap-3">
+                     <input 
+                       type="checkbox" 
+                       id="feedStock"
+                       checked={newProduct.feedStock}
+                       onChange={e => setNewProduct({...newProduct, feedStock: e.target.checked})}
+                       className="w-4 h-4 rounded border-dark-border bg-dark-bg text-primary focus:ring-primary focus:ring-offset-dark-card"
+                     />
+                     <label htmlFor="feedStock" className="text-sm font-bold text-white">Alimentar estoque imediatamente?</label>
+                   </div>
+
+                   {newProduct.feedStock && (
+                     <div className="pl-7">
+                       <label className="text-xs text-dark-dim mb-1 block">Quantidade Total</label>
+                       <input 
+                         type="number" 
+                         min="1"
+                         className="w-full bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none"
+                         value={newProduct.stockQuantity}
+                         onChange={e => setNewProduct({...newProduct, stockQuantity: parseInt(e.target.value) || 0})}
+                       />
+                       <p className="text-xs text-dark-dim mt-1">A quantidade será adicionada no tamanho 'U' no estoque selecionado.</p>
+                     </div>
+                   )}
+                 </div>
+               )}
 
                <div className="border-t border-dark-border pt-4 mt-4">
                   <div className="flex justify-between items-center mb-4">

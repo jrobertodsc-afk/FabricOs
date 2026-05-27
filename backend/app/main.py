@@ -29,8 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.makedirs("backend/uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = "/data/uploads" if os.path.exists("/data") else "backend/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # ---- Rotas ----
 app.include_router(auth.router)

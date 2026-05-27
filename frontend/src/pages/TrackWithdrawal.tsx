@@ -14,10 +14,8 @@ import {
   ArrowLeft,
   WarningCircle
 } from '@phosphor-icons/react';
-import { trackWithdrawal } from '../services/api';
+import { trackWithdrawal, API_BASE_URL } from '../services/api';
 import type { Withdrawal } from '../services/api';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
 const TrackWithdrawal: React.FC = () => {
   const { code } = useParams<{ code: string }>();

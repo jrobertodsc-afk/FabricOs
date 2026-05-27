@@ -5,7 +5,21 @@ import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 
+const getDecodedToken = () => {
+  try {
+    const token = localStorage.getItem('fabricos_token');
+    if (!token) return null;
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+};
+
 const Settings: React.FC = () => {
+  const user = getDecodedToken();
   const [stages, setStages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newStageName, setNewStageName] = useState('');
@@ -230,7 +244,8 @@ const Settings: React.FC = () => {
           </form>
         </section>
 
-        <section className="card border border-dark-border hover:border-primary/20 transition-all">
+        {user?.role === 'admin' && (
+          <section className="card border border-dark-border hover:border-primary/20 transition-all">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-primary/10 text-primary p-2 rounded-lg">
               <Kanban size={20} weight="bold" />
@@ -363,6 +378,7 @@ const Settings: React.FC = () => {
             )}
           </div>
         </section>
+        )}
       </div>
 
       <ConfirmDialog 

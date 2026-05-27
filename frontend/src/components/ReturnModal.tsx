@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, CheckCircle, Camera, SpinnerGap } from '@phosphor-icons/react';
 import SignatureCanvas from 'react-signature-canvas';
-import { uploadImage } from '../services/api';
+import { uploadImage, API_BASE_URL } from '../services/api';
 
 const SigCanvas = (SignatureCanvas as any).default || SignatureCanvas;
 
@@ -170,7 +170,7 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ isOpen, onClose, onSubmit, wi
             <div className="flex flex-wrap gap-4 items-center">
               {formData.return_photo_urls.map((url, i) => (
                 <div key={i} className="w-16 h-16 rounded-xl border border-dark-border overflow-hidden bg-dark-bg relative group">
-                  <img src={`http://127.0.0.1:8000${url}`} alt="Upload" className="w-full h-full object-cover" />
+                  <img src={`${API_BASE_URL}${url}`} alt="Upload" className="w-full h-full object-cover" />
                   <button 
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, return_photo_urls: prev.return_photo_urls.filter((_, idx) => idx !== i) }))}
