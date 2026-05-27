@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, List, Optional, TypeVar, Dict
 
 T = TypeVar("T")
 
