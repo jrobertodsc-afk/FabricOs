@@ -146,17 +146,17 @@ const Dashboard: React.FC = () => {
   const chartMax = useMemo(() => Math.max(...chartData.map(d => d.count), 1), [chartData]);
 
   const renderDashboard = () => (
-    <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
-      <header className="flex justify-between items-center mb-10">
+    <div className="p-4 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
+      <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-3xl font-black font-outfit tracking-tight">FabricOS Intelligence</h1>
+          <h1 className="text-2xl md:text-3xl font-black font-outfit tracking-tight">FabricOS Intelligence</h1>
           <p className="text-dark-dim text-sm font-medium">Monitorando {orders.length} lotes em tempo real.</p>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-4 md:gap-6">
           <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-2 rounded-2xl">
              <div className="text-right">
-                <p className="text-xs font-bold text-white">{userInfo.name}</p>
+                <p className="text-xs font-bold text-white max-w-[100px] truncate">{userInfo.name}</p>
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{userInfo.role}</p>
              </div>
              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-hover rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-primary/20">
@@ -178,10 +178,10 @@ const Dashboard: React.FC = () => {
         <MagnifyingGlass className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-primary transition-colors" size={22} />
         <input 
           type="text" 
-          placeholder="Pesquisar por OP, Faccionista ou Referência de Produto..." 
-          className="w-full bg-dark-card/50 border border-dark-border rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary focus:bg-dark-card transition-all shadow-inner"
+          placeholder="Pesquisar..." 
+          className="w-full bg-dark-card/50 border border-dark-border rounded-2xl py-4 pl-14 pr-4 md:pr-24 text-sm focus:outline-none focus:border-primary focus:bg-dark-card transition-all shadow-inner"
         />
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+        <div className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 gap-2">
            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-dark-dim">Ctrl</kbd>
            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-dark-dim">K</kbd>
         </div>
