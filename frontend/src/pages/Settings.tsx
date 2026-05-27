@@ -255,7 +255,6 @@ const Settings: React.FC = () => {
           </form>
         </section>
 
-        <div className="max-w-2xl mt-8">
         {!devUnlocked && user?.role !== 'admin' && (
           <button 
             onClick={handleUnlockAdvanced}
