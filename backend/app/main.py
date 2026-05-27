@@ -94,6 +94,15 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
+# ---- Debug Route ----
+@app.get("/api/debug/error", tags=["System"])
+async def get_debug_error():
+    try:
+        from backend.app.api.backoffice_server import LAST_ERROR
+        return {"error": LAST_ERROR.get("error")}
+    except Exception as e:
+        return {"error": str(e)}
+
 # ---- Health Check ----
 @app.get("/health", tags=["System"])
 async def health() -> dict:
