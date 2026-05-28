@@ -225,9 +225,9 @@ const Pilotage: React.FC = () => {
 
           <button 
             onClick={() => window.open(trelloUrl, '_blank')} 
-            className="flex items-center gap-2 px-4 py-2 bg-[#0052CC]/10 text-[#0052CC] rounded-xl hover:bg-[#0052CC]/20 transition-all font-bold text-sm"
+            className="btn-secondary py-2"
           >
-            <ArrowSquareOut size={18} weight="bold" />
+            <ArrowSquareOut size={18} weight="thin" />
             Abrir Trello
           </button>
           
@@ -235,7 +235,7 @@ const Pilotage: React.FC = () => {
             onClick={openCreate} 
             className="btn-primary py-2"
           >
-            <Plus size={18} weight="bold" />
+            <Plus size={18} weight="thin" />
             Nova Ficha Pilotagem
           </button>
         </div>
@@ -339,13 +339,10 @@ const Pilotage: React.FC = () => {
                   <div className="flex justify-between items-center mt-auto flex-shrink-0">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block">Status</span>
-                      <span className={`px-2.5 py-1 rounded text-[10px] uppercase font-black tracking-widest border border-dashed text-center ${
-                        card.status === 'aprovado' ? 'border-success text-success bg-success/5' : 
-                        card.status === 'reprovado' ? 'border-danger text-danger bg-danger/5' : 
-                        'border-warning text-warning bg-warning/5'
-                      }`}>
+                      <div className="tag-neutral border-dashed flex items-center gap-1.5 px-2 py-1 uppercase text-[10px] tracking-widest font-bold">
+                        <div className={`w-1.5 h-1.5 rounded-full ${card.status === 'aprovado' ? 'bg-success' : card.status === 'reprovado' ? 'bg-danger' : 'bg-warning'}`}></div>
                         {getStatusLabel(card.status)}
-                      </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1.5">

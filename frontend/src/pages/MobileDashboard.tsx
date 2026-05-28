@@ -273,9 +273,9 @@ export default function MobileDashboard() {
             </div>
 
             {/* Sync Trello Button */}
-            <div className="bg-gradient-to-br from-indigo-950/40 to-purple-950/20 border border-indigo-500/20 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+            <div className="bg-dark-card border border-dark-border/50 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
               <div>
-                <h3 className="font-outfit font-bold text-base text-indigo-300">Integração Trello Coleções</h3>
+                <h3 className="font-outfit font-bold text-base">Integração Trello Coleções</h3>
                 <p className="text-xs text-dark-dim mt-1 leading-relaxed">
                   Busca novos cards de modelagem em quadros específicos do Trello de cada coleção e atualiza o acervo e fichas técnicas no FabricOS.
                 </p>
@@ -283,10 +283,10 @@ export default function MobileDashboard() {
               <button 
                 onClick={handleSyncTrello}
                 disabled={syncing}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-md shadow-indigo-500/10 hover:scale-102 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-white text-black font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
               >
                 <ArrowClockwise size={18} className={syncing ? 'animate-spin' : ''} />
-                {syncing ? 'Sincronizando Trello...' : 'Sincronizar Coleções Trello'}
+                {syncing ? 'Sincronizando...' : 'Sincronizar Coleções'}
               </button>
             </div>
           </div>

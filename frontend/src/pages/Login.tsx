@@ -31,15 +31,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-10">
-          <div className="inline-flex bg-primary p-4 rounded-2xl shadow-2xl shadow-primary/20 mb-4">
-            <Package size={40} weight="bold" className="text-white" />
+          <div className="inline-flex bg-white p-4 rounded-2xl shadow-xl shadow-white/5 mb-4">
+            <Package size={40} weight="thin" className="text-black" />
           </div>
-          <h1 className="text-4xl font-outfit font-bold text-white tracking-tight">FabricOS</h1>
+          <h1 className="text-5xl font-outfit font-black text-white tracking-tighter">FabricOS</h1>
           <p className="text-dark-dim mt-2">Plataforma de Inteligência Industrial</p>
         </div>
 
         {/* Login Card */}
-        <div className="card !p-8 border-t-4 border-t-primary">
+        <div className="card !p-8">
           <h2 className="text-xl font-bold text-white mb-6">Acesse sua conta</h2>
           
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -85,7 +85,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               className="w-full btn-primary justify-center py-4 text-base mt-4"
             >
               {loading ? 'Autenticando...' : 'Entrar no Sistema'}
-              <ArrowRight size={20} weight="bold" />
+              <ArrowRight size={20} weight="thin" />
             </button>
           </form>
 

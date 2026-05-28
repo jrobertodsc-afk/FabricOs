@@ -1,58 +1,59 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #4F46E5;
-  --color-primary-hover: #4338CA;
-  --color-dark-bg: #0A0B10;
-  --color-dark-card: #12141C;
-  --color-dark-border: #1F2230;
-  --color-dark-dim: #94A3B8;
+  --color-primary: #FFFFFF;
+  --color-primary-hover: #E4E4E7;
+  --color-dark-bg: #050507;
+  --color-dark-card: #0B0C10;
+  --color-dark-border: #181922;
+  --color-dark-dim: #888A96;
   --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #06B6D4;
 
   --font-inter: "Inter", sans-serif;
   --font-outfit: "Outfit", sans-serif;
 
-  --shadow-primary: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+  --shadow-primary: 0 4px 20px -2px rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
   body {
-    @apply bg-dark-bg text-white font-inter antialiased;
+    @apply bg-dark-bg text-slate-200 font-inter antialiased selection:bg-white/10 selection:text-white;
   }
   
   ::placeholder {
-    @apply text-dark-dim/80;
+    @apply text-dark-dim/40;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-dark-card border border-dark-border/60 p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:border-dark-border transition-all duration-300;
+    @apply bg-dark-card border border-dark-border p-5 rounded-lg shadow-[0_2px_12px_-3px_rgba(0,0,0,0.8)] hover:border-white/10 transition-all duration-300;
   }
   
   .btn-primary {
-    @apply bg-gradient-to-br from-primary to-primary-hover text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-primary active:scale-[0.98] hover:scale-[1.02];
+    @apply bg-white hover:bg-slate-200 text-black px-4 py-2 rounded-md font-semibold tracking-wide transition-all flex items-center gap-2 text-[11px] hover:scale-[1.01] active:scale-[0.99] cursor-pointer shadow-sm;
   }
   
   .btn-secondary {
-    @apply bg-dark-border/30 hover:bg-dark-border/50 text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-sm border border-dark-border/50;
+    @apply bg-white/[0.02] hover:bg-white/5 text-slate-200 px-4 py-2 rounded-md font-semibold tracking-wide transition-all flex items-center gap-2 text-[11px] border border-white/10 hover:border-white/20 active:scale-[0.99] cursor-pointer;
   }
   
   .input-field {
-    @apply w-full bg-dark-bg border border-dark-border rounded-xl p-3 focus:border-primary outline-none text-sm transition-all;
+    @apply w-full bg-black/60 border border-dark-border rounded-md p-2.5 focus:border-white/20 outline-none text-xs text-white transition-all placeholder:text-dark-dim/30;
   }
 
   .table-header {
-    @apply bg-white/[0.03] text-dark-dim text-[10px] uppercase font-black tracking-[0.15em] border-b border-dark-border;
+    @apply bg-white/[0.01] text-dark-dim text-[9px] uppercase font-bold tracking-[0.2em] border-b border-dark-border/60;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -60,5 +61,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+  @apply bg-white/5 rounded hover:bg-white/10 transition-colors;
 }

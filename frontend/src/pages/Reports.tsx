@@ -42,39 +42,39 @@ const Reports: React.FC = () => {
           <h1 className="text-2xl font-bold font-outfit">Relatórios & BI</h1>
           <p className="text-dark-dim">Análise de produtividade e desempenho da sua fábrica.</p>
         </div>
-        <button className="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-          <DownloadSimple size={20} weight="bold" />
+        <button className="btn-secondary">
+          <DownloadSimple size={18} weight="thin" />
           Exportar Excel
         </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-         <div className="card border-l-4 border-l-primary">
-            <p className="text-xs font-bold text-dark-dim uppercase mb-1">Total Produzido (Pças)</p>
-            <h2 className="text-3xl font-black font-outfit">{totalProduced.toLocaleString('pt-BR')}</h2>
-            <div className="flex items-center gap-1 text-success text-[10px] mt-2 font-bold">
-               <TrendUp size={14} /> +15.4% este mês
+         <div className="card">
+            <p className="text-[10px] font-bold text-dark-dim uppercase tracking-wider mb-2">Total Produzido (Pças)</p>
+            <h2 className="text-3xl font-bold font-outfit text-zinc-100">{totalProduced.toLocaleString('pt-BR')}</h2>
+            <div className="flex items-center gap-1 text-zinc-400 text-[10px] mt-3">
+               <TrendUp size={14} weight="thin" /> +15.4% este mês
             </div>
          </div>
-         <div className="card border-l-4 border-l-info">
-            <p className="text-xs font-bold text-dark-dim uppercase mb-1">Custo Médio / Peça</p>
-            <h2 className="text-3xl font-black font-outfit">R$ 12,45</h2>
-            <p className="text-dark-dim text-[10px] mt-2">Baseado em 1.240 acertos</p>
+         <div className="card">
+            <p className="text-[10px] font-bold text-dark-dim uppercase tracking-wider mb-2">Custo Médio / Peça</p>
+            <h2 className="text-3xl font-bold font-outfit text-zinc-100">R$ 12,45</h2>
+            <p className="text-zinc-500 text-[10px] mt-3">Baseado em 1.240 acertos</p>
          </div>
-         <div className="card border-l-4 border-l-warning">
-            <p className="text-xs font-bold text-dark-dim uppercase mb-1">Taxa de Defeitos</p>
-            <h2 className="text-3xl font-black font-outfit text-warning">
+         <div className="card">
+            <p className="text-[10px] font-bold text-dark-dim uppercase tracking-wider mb-2">Taxa de Defeitos</p>
+            <h2 className="text-3xl font-bold font-outfit text-zinc-100">
                {qualityStats ? qualityStats.defect_rate.toFixed(1) : '0'}%
             </h2>
-            <div className="flex items-center gap-1 text-warning text-[10px] mt-2 font-bold">
-               <WarningCircle size={14} /> Meta: abaixo de 2%
+            <div className="flex items-center gap-1 text-zinc-400 text-[10px] mt-3">
+               <WarningCircle size={14} weight="thin" /> Meta: abaixo de 2%
             </div>
          </div>
-         <div className="card border-l-4 border-l-success">
-            <p className="text-xs font-bold text-dark-dim uppercase mb-1">Eficiência de Entrega</p>
-            <h2 className="text-3xl font-black font-outfit text-success">94%</h2>
-            <div className="flex items-center gap-1 text-success text-[10px] mt-2 font-bold">
-               <CheckCircle size={14} /> OPs entregues no prazo
+         <div className="card">
+            <p className="text-[10px] font-bold text-dark-dim uppercase tracking-wider mb-2">Eficiência de Entrega</p>
+            <h2 className="text-3xl font-bold font-outfit text-zinc-100">94%</h2>
+            <div className="flex items-center gap-1 text-zinc-400 text-[10px] mt-3">
+               <CheckCircle size={14} weight="thin" /> OPs entregues no prazo
             </div>
          </div>
       </div>
@@ -125,9 +125,10 @@ const Reports: React.FC = () => {
                          <td className="px-6 py-4 font-bold">{o.order_number}</td>
                          <td className="px-6 py-4">{o.due_date ? new Date(o.due_date).toLocaleDateString('pt-BR') : 'Sem prazo'}</td>
                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${o.current_stage === 'Finalizado' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                            <div className="tag-neutral flex items-center gap-1.5 w-fit">
+                               <div className={`w-1.5 h-1.5 rounded-full ${o.current_stage === 'Finalizado' ? 'bg-success' : 'bg-warning'}`}></div>
                                {o.current_stage}
-                            </span>
+                            </div>
                          </td>
                       </tr>
                    ))}

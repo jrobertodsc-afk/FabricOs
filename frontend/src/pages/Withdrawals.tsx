@@ -129,125 +129,129 @@ const Withdrawals: React.FC = () => {
   });
 
   return (
-    <div className="p-8 flex flex-col h-screen overflow-hidden">
+    <div className="p-4 md:p-8 flex flex-col h-screen overflow-hidden">
       <header className="flex justify-between items-center mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold font-outfit">Controle de Retiradas</h1>
-          <p className="text-dark-dim">Gerencie entregas, devoluções e contate parceiros</p>
+          <span className="text-[9px] font-bold text-dark-dim uppercase tracking-[0.25em] mb-1 block">ESTOQUE EXTERNO</span>
+          <h1 className="text-xl md:text-2xl font-light font-outfit text-white tracking-widest">CONTROLE DE RETIRADAS</h1>
+          <p className="text-dark-dim text-[11px]">Rastreamento georreferenciado e controle de custódia de peças.</p>
         </div>
       </header>
 
-      <div className="flex gap-2 mb-6 flex-shrink-0 bg-dark-card w-fit p-1 rounded-xl border border-dark-border">
+      <div className="flex gap-1 mb-6 flex-shrink-0 bg-white/[0.01] w-fit p-1 rounded-md border border-dark-border">
         <button 
           onClick={() => setActiveTab('pending')}
-          className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'pending' ? 'bg-primary/20 text-primary' : 'text-dark-dim hover:bg-white/5'}`}
+          className={`px-4 py-1.5 rounded font-semibold tracking-wider text-[10px] uppercase transition-all cursor-pointer ${activeTab === 'pending' ? 'bg-white text-black font-bold' : 'text-dark-dim hover:bg-white/5'}`}
         >
           Em Andamento
         </button>
         <button 
           onClick={() => setActiveTab('completed')}
-          className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'completed' ? 'bg-primary/20 text-primary' : 'text-dark-dim hover:bg-white/5'}`}
+          className={`px-4 py-1.5 rounded font-semibold tracking-wider text-[10px] uppercase transition-all cursor-pointer ${activeTab === 'completed' ? 'bg-white text-black font-bold' : 'text-dark-dim hover:bg-white/5'}`}
         >
-          Histórico (Concluídas)
+          Histórico
         </button>
       </div>
 
       {loading ? (
-        <p className="text-dark-dim">Carregando retiradas...</p>
+        <p className="text-dark-dim text-xs">Carregando retiradas...</p>
       ) : (
-        <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-dark-card border border-dark-border rounded-2xl">
+        <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-dark-card border border-dark-border rounded-lg shadow-2xl">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-dark-border bg-white/[0.02]">
-                <th className="p-4 text-xs font-bold text-dark-dim uppercase tracking-widest">Item / Serviço</th>
-                <th className="p-4 text-xs font-bold text-dark-dim uppercase tracking-widest">Responsável</th>
-                <th className="p-4 text-xs font-bold text-dark-dim uppercase tracking-widest">Previsão</th>
-                <th className="p-4 text-xs font-bold text-dark-dim uppercase tracking-widest">Status</th>
-                <th className="p-4 text-xs font-bold text-dark-dim uppercase tracking-widest text-right">Ações</th>
+              <tr className="border-b border-dark-border bg-white/[0.01]">
+                <th className="p-3.5 text-[8px] font-bold text-dark-dim uppercase tracking-[0.22em]">Item / Serviço</th>
+                <th className="p-3.5 text-[8px] font-bold text-dark-dim uppercase tracking-[0.22em]">Responsável</th>
+                <th className="p-3.5 text-[8px] font-bold text-dark-dim uppercase tracking-[0.22em]">Previsão</th>
+                <th className="p-3.5 text-[8px] font-bold text-dark-dim uppercase tracking-[0.22em]">Status</th>
+                <th className="p-3.5 text-[8px] font-bold text-dark-dim uppercase tracking-[0.22em] text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-border text-sm">
+            <tbody className="divide-y divide-dark-border/40 text-[11px] text-slate-300">
               {filteredWithdrawals.map((w) => {
                 const partner = w.partner_id ? partners.find(p => p.id === w.partner_id) : null;
                 const isLate = w.status === 'Pendente' && w.expected_return && new Date(w.expected_return) < new Date();
 
                 return (
-                  <tr key={w.id} className="hover:bg-white/[0.01] transition-colors">
-                    <td className="p-4">
+                  <tr key={w.id} className="hover:bg-white/[0.01] transition-all duration-150">
+                    <td className="p-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-primary">
-                          <Package size={20} />
+                        <div className="w-7 h-7 bg-white/[0.01] rounded border border-white/5 flex items-center justify-center text-slate-300">
+                          <Package size={14} weight="thin" />
                         </div>
                         <div>
-                          <p className="font-bold">{w.item_name}</p>
-                          <p className="text-[10px] text-dark-dim uppercase tracking-wider">
+                          <p className="font-semibold text-slate-100">{w.item_name}</p>
+                          <p className="text-[8px] text-dark-dim uppercase tracking-widest">
                             {w.tracking_code ? `${w.tracking_code} • ` : ''}{w.type}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-3.5">
                       <div className="flex items-center gap-2">
-                        <User size={16} className="text-dark-dim" />
-                        <span className="font-medium">{partner ? partner.name : w.person_name}</span>
+                        <User size={12} className="text-dark-dim" />
+                        <span className="font-medium text-slate-300">{partner ? partner.name : w.person_name}</span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-3.5">
                       {w.expected_return ? (
-                        <span className={`font-medium ${isLate ? 'text-danger' : ''}`}>
+                        <span className={`font-medium ${isLate ? 'text-danger font-semibold' : 'text-slate-400'}`}>
                           {new Date(w.expected_return).toLocaleDateString('pt-BR')}
                         </span>
                       ) : (
-                        <span className="text-dark-dim text-xs">Não definida</span>
+                        <span className="text-dark-dim text-[10px]">Não definida</span>
                       )}
                     </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        ['Concluída', 'ok'].includes(w.status) ? 'bg-success/10 text-success' :
-                        w.status === 'defeito' ? 'bg-danger/10 text-danger' :
-                        w.status === 'parcial' ? 'bg-warning/10 text-warning' :
-                        isLate ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning'
-                      }`}>
+                    <td className="p-3.5">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-medium border border-white/5 bg-white/[0.01] text-slate-300">
+                        <div className={`w-1 h-1 rounded-full ${
+                          ['Concluída', 'ok'].includes(w.status) ? 'bg-success' :
+                          w.status === 'defeito' ? 'bg-danger' :
+                          w.status === 'parcial' ? 'bg-warning' :
+                          isLate ? 'bg-danger animate-pulse' : 'bg-warning'
+                        }`}></div>
                         {w.status === 'Pendente' && isLate ? 'Atrasada' : w.status}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="p-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         {w.tracking_code && (
                           <button 
                             onClick={() => setActiveQrWithdrawal(w)}
-                            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                            className="p-1.5 bg-white/[0.01] hover:bg-white/5 text-slate-300 rounded border border-white/10 cursor-pointer"
                             title="Visualizar QR Code de Rastreamento"
                           >
-                            <QrCode size={18} />
+                            <QrCode size={13} weight="thin" />
                           </button>
                         )}
                         <button 
                           onClick={() => handleWhatsApp(w)}
-                          className="p-2 bg-success/10 text-success rounded-lg hover:bg-success/20 transition-colors"
+                          className="p-1.5 bg-white/[0.01] hover:bg-white/5 text-slate-300 rounded border border-white/10 cursor-pointer"
                           title="Cobrar via WhatsApp"
                         >
-                          <WhatsappLogo size={18} weight="fill" />
+                          <WhatsappLogo size={13} weight="thin" />
                         </button>
                         <button 
                           onClick={() => handleEmail(w)}
-                          className="p-2 bg-white/5 text-dark-dim rounded-lg hover:bg-white/10 transition-colors"
+                          className="p-1.5 bg-white/[0.01] hover:bg-white/5 text-slate-300 rounded border border-white/10 cursor-pointer"
                           title="Enviar E-mail"
                         >
-                          <EnvelopeSimple size={18} />
+                          <EnvelopeSimple size={13} weight="thin" />
                         </button>
                         {w.photo_urls && w.photo_urls.length > 0 && (
                           <button 
                             onClick={() => window.open(`${API_BASE_URL}${w.photo_urls![0]}`, '_blank')}
-                            className="p-2 bg-info/10 text-info rounded-lg hover:bg-info/20 transition-colors"
+                            className="p-1.5 bg-white/[0.01] hover:bg-white/5 text-slate-300 rounded border border-white/10 cursor-pointer"
                             title="Ver Fotos"
                           >
-                            <Camera size={18} />
+                            <Camera size={13} weight="thin" />
                           </button>
                         )}
                         <button 
                           onClick={() => { setWithdrawalToDelete(w); setIsDeleteOpen(true); }}
-                          className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition-colors"
+                          className="p-1.5 bg-white/[0.01] hover:bg-white/5 text-slate-300 rounded border border-white/10 cursor-pointer"
+
+
                           title="Excluir Retirada"
                         >
                           <Trash size={18} />

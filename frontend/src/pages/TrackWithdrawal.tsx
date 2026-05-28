@@ -77,25 +77,25 @@ const TrackWithdrawal: React.FC = () => {
   const totalPieces = withdrawal.items?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white font-inter pb-20">
+    <div className="min-h-screen bg-dark-bg text-slate-200 font-inter pb-20">
       {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[300px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none blur-3xl rounded-full" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[240px] bg-gradient-to-b from-white/[0.01] to-transparent pointer-events-none blur-3xl rounded-full" />
 
       {/* Top Header / Nav */}
-      <div className="border-b border-dark-border/40 bg-dark-bg/60 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div className="border-b border-dark-border bg-dark-bg/60 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 border border-primary/20 p-2 rounded-xl text-primary">
-              <ShieldCheck size={24} weight="bold" />
+            <div className="bg-white/5 border border-white/10 p-2 rounded text-slate-300">
+              <ShieldCheck size={18} weight="thin" />
             </div>
             <div>
-              <span className="text-xs text-dark-dim uppercase tracking-widest font-black">FabricOS</span>
-              <h1 className="text-sm font-bold -mt-1 font-outfit">Validador de Retirada</h1>
+              <span className="text-[8px] text-dark-dim uppercase tracking-[0.25em] font-bold block leading-none">FabricOS</span>
+              <h1 className="text-xs font-light font-outfit text-white tracking-wider">Validador Oficial</h1>
             </div>
           </div>
           <button 
             onClick={() => navigate('/login')} 
-            className="text-xs text-dark-dim hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-dark-border/60"
+            className="text-[10px] font-semibold text-slate-300 hover:text-white transition-colors bg-white/5 px-2.5 py-1.5 rounded border border-white/10 cursor-pointer"
           >
             Acessar Sistema
           </button>
@@ -104,84 +104,85 @@ const TrackWithdrawal: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4 mt-8 relative z-10">
         {/* Status banner */}
-        <div className="card mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-dark-card to-dark-card/50">
+        <div className="card mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-dark-card border border-dark-border">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[9px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded uppercase tracking-wider">
                 {withdrawal.tracking_code}
               </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                isCompleted ? 'bg-success/10 text-success border-success/20' :
-                isDefective ? 'bg-danger/10 text-danger border-danger/20' :
-                isPartial ? 'bg-warning/10 text-warning border-warning/20' :
-                'bg-warning/10 text-warning border-warning/20'
-              }`}>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-medium border border-white/5 bg-white/[0.01] text-slate-300">
+                <div className={`w-1 h-1 rounded-full ${
+                  isCompleted ? 'bg-success' :
+                  isDefective ? 'bg-danger' :
+                  isPartial ? 'bg-warning' :
+                  'bg-warning'
+                }`}></div>
                 {withdrawal.status === 'Pendente' ? 'Em Aberto / Com Parceiro' : `Devolvido (${withdrawal.status.toUpperCase()})`}
               </span>
             </div>
-            <h2 className="text-2xl font-bold font-outfit">{withdrawal.item_name}</h2>
-            <p className="text-dark-dim text-sm mt-1">Registrado em {new Date(withdrawal.created_at).toLocaleString('pt-BR')}</p>
+            <h2 className="text-xl md:text-2xl font-light font-outfit text-white tracking-wide">{withdrawal.item_name}</h2>
+            <p className="text-dark-dim text-[10px] mt-1">Registrado em {new Date(withdrawal.created_at).toLocaleString('pt-BR')}</p>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-1">
-            <span className="text-xs text-dark-dim">Total de Peças</span>
-            <span className="text-3xl font-black text-primary font-outfit">{totalPieces} <span className="text-sm font-normal text-dark-dim">unidades</span></span>
+          <div className="flex flex-col items-start md:items-end gap-0.5">
+            <span className="text-[9px] text-dark-dim uppercase tracking-wider font-bold">Total de Peças</span>
+            <span className="text-2xl font-bold text-white font-outfit">{totalPieces} <span className="text-xs font-normal text-dark-dim">unidades</span></span>
           </div>
         </div>
 
         {/* Stepper Progress */}
-        <div className="card mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-dark-dim mb-6">Status da Movimentação</h3>
+        <div className="card mb-6">
+          <h3 className="text-[8px] font-bold uppercase tracking-[0.2em] text-dark-dim mb-6">Status da Movimentação</h3>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative">
             
             {/* Step 1 */}
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-10 h-10 rounded-full bg-success/20 border border-success/30 flex items-center justify-center text-success flex-shrink-0">
-                <CheckCircle size={20} weight="fill" />
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-7 h-7 rounded bg-success/15 border border-success/25 flex items-center justify-center text-success flex-shrink-0">
+                <CheckCircle size={14} weight="thin" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Retirada Autorizada</h4>
-                <p className="text-xs text-dark-dim">Saída liberada pelo estoque</p>
+                <h4 className="font-bold text-xs text-slate-200">Retirada Autorizada</h4>
+                <p className="text-[10px] text-dark-dim">Saída liberada pelo estoque</p>
               </div>
             </div>
 
             {/* Line connector */}
-            <div className={`hidden md:block h-[2px] w-12 bg-gradient-to-r ${isPending ? 'from-success to-dark-border' : 'from-success to-success'}`} />
+            <div className={`hidden md:block h-[1px] w-12 ${isPending ? 'bg-dark-border' : 'bg-success/50'}`} />
 
             {/* Step 2 */}
-            <div className="flex items-center gap-4 flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${
+            <div className="flex items-center gap-3 flex-1">
+              <div className={`w-7 h-7 rounded flex items-center justify-center flex-shrink-0 border ${
                 isPending 
-                  ? 'bg-warning/20 border-warning/30 text-warning animate-pulse' 
-                  : 'bg-success/20 border-success/30 text-success'
+                  ? 'bg-warning/15 border-warning/25 text-warning animate-pulse' 
+                  : 'bg-success/15 border-success/25 text-success'
               }`}>
-                {isPending ? <Clock size={20} weight="fill" /> : <CheckCircle size={20} weight="fill" />}
+                {isPending ? <Clock size={14} weight="thin" /> : <CheckCircle size={14} weight="thin" />}
               </div>
               <div>
-                <h4 className="font-bold text-sm">Com o Responsável</h4>
-                <p className="text-xs text-dark-dim">Peças em posse externa</p>
+                <h4 className="font-bold text-xs text-slate-200">Com o Responsável</h4>
+                <p className="text-[10px] text-dark-dim">Peças em posse externa</p>
               </div>
             </div>
 
             {/* Line connector */}
-            <div className={`hidden md:block h-[2px] w-12 bg-gradient-to-r ${isPending ? 'from-dark-border to-dark-border' : 'from-success to-success'}`} />
+            <div className="hidden md:block h-[1px] w-12 bg-dark-border" />
 
             {/* Step 3 */}
-            <div className="flex items-center gap-4 flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${
+            <div className="flex items-center gap-3 flex-1">
+              <div className={`w-7 h-7 rounded flex items-center justify-center flex-shrink-0 border ${
                 isPending 
-                  ? 'bg-dark-bg border-dark-border text-dark-dim' 
+                  ? 'bg-black/40 border-dark-border text-dark-dim' 
                   : isCompleted 
-                    ? 'bg-success/20 border-success/30 text-success' 
+                    ? 'bg-success/15 border-success/25 text-success' 
                     : isDefective 
-                      ? 'bg-danger/20 border-danger/30 text-danger' 
-                      : 'bg-warning/20 border-warning/30 text-warning'
+                      ? 'bg-danger/15 border-danger/25 text-danger' 
+                      : 'bg-warning/15 border-warning/25 text-warning'
               }`}>
-                <Package size={20} weight={isPending ? 'thin' : 'fill'} />
+                <Package size={14} weight="thin" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Retornado ao Estoque</h4>
-                <p className="text-xs text-dark-dim">
+                <h4 className="font-bold text-xs text-slate-200">Retornado ao Estoque</h4>
+                <p className="text-[10px] text-dark-dim">
                   {isPending ? 'Aguardando baixa' : `Baixa em ${new Date(withdrawal.created_at).toLocaleDateString()}`}
                 </p>
               </div>
@@ -189,6 +190,7 @@ const TrackWithdrawal: React.FC = () => {
 
           </div>
         </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           

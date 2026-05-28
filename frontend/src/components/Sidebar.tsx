@@ -29,12 +29,12 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView }) => {
     <aside className="w-72 bg-dark-card border-r border-dark-border flex flex-col h-full shrink-0">
       <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 rotate-3">
-            <TShirt size={26} weight="bold" className="text-white" />
+          <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-white/5 rotate-3">
+            <TShirt size={26} weight="thin" className="text-black" />
           </div>
           <div>
-            <h1 className="text-2xl font-black font-outfit tracking-tighter leading-none text-white">FabricOS</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">Smart Factory</p>
+            <h1 className="text-3xl font-black font-outfit tracking-tighter leading-none text-white">FabricOS</h1>
+            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-1">Smart Factory</p>
           </div>
         </div>
 
