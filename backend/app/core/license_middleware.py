@@ -30,7 +30,8 @@ AwIDAQAB
 ALGORITHM = "RS256"
 
 # URL do Servidor Central Backoffice
-CENTRAL_BACKOFFICE_URL = os.getenv("CENTRAL_BACKOFFICE_URL", "http://127.0.0.1:8000/api/backoffice")
+_port = os.getenv("PORT", "8000")
+CENTRAL_BACKOFFICE_URL = os.getenv("CENTRAL_BACKOFFICE_URL", f"http://127.0.0.1:{_port}/api/backoffice")
 
 def get_private_key() -> Optional[str]:
     """Recupera a chave privada de forma dinâmica para auto-licenciamento em desenvolvimento."""
