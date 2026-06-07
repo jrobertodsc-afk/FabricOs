@@ -128,8 +128,8 @@ const Products: React.FC = () => {
       reference: product.reference,
       name: product.name,
       description: product.description || '',
-      base_price: product.base_price,
-      materials: product.materials.map(m => ({
+      base_price: product.base_price || 0,
+      materials: (product.materials || []).map(m => ({
         material_id: m.material_id,
         quantity: m.quantity
       })),
@@ -255,13 +255,13 @@ const Products: React.FC = () => {
                 <div className="border-t border-dark-border pt-4">
                    <h4 className="text-[10px] uppercase font-bold text-dark-dim mb-3 tracking-widest">Insumos / Kit</h4>
                    <div className="space-y-2">
-                      {p.materials.map(pm => (
+                      {(p.materials || []).map(pm => (
                         <div key={pm.id} className="flex justify-between text-xs">
                            <span className="text-dark-dim">{pm.material.name}</span>
                            <span className="font-bold">{pm.quantity} {pm.material.unit}</span>
                         </div>
                       ))}
-                      {p.materials.length === 0 && <p className="text-xs text-dark-dim italic">Nenhum insumo vinculado.</p>}
+                      {(p.materials || []).length === 0 && <p className="text-xs text-dark-dim italic">Nenhum insumo vinculado.</p>}
                    </div>
                 </div>
               </div>

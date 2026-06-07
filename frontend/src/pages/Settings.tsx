@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Gear, Plus, Trash, ArrowsDownUp, Check, PencilSimple, FloppyDisk, X, Kanban } from '@phosphor-icons/react';
+import { Gear, Plus, Trash, ArrowsDownUp, Check, PencilSimple, FloppyDisk, X, Kanban, ArrowsClockwise } from '@phosphor-icons/react';
 import { getProductionStages } from '../services/api';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
+import TrelloSyncModal from '../components/TrelloSyncModal';
 import { useToast } from '../contexts/ToastContext';
 
 const getDecodedToken = () => {
@@ -39,6 +40,7 @@ const Settings: React.FC = () => {
   const [trelloSaving, setTrelloSaving] = useState(false);
   const [trelloActiveBoards, setTrelloActiveBoards] = useState<any[]>([]);
   const [devUnlocked, setDevUnlocked] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   const handleUnlockAdvanced = () => {
     const pwd = window.prompt("Digite a senha do administrador para desbloquear as configurações avançadas:");
@@ -266,11 +268,22 @@ const Settings: React.FC = () => {
         
         {(user?.role === 'admin' || devUnlocked) && (
           <section className="card border border-dark-border hover:border-primary/20 transition-all">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-primary/10 text-primary p-2 rounded-lg">
-              <Kanban size={20} weight="bold" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                <Kanban size={20} weight="bold" />
+              </div>
+              <h2 className="text-lg font-bold">Integração Trello (Automação)</h2>
             </div>
-            <h2 className="text-lg font-bold">Integração Trello (Automação)</h2>
+            
+            <button 
+              type="button"
+              onClick={() => setIsSyncModalOpen(true)}
+              className="px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary font-bold text-xs rounded-xl flex items-center gap-2 transition-all"
+            >
+              <ArrowsClockwise size={16} weight="bold" />
+              Sincronizar Histórico Aprovadas
+            </button>
           </div>
 
           <p className="text-sm text-dark-dim mb-6">
@@ -408,6 +421,11 @@ const Settings: React.FC = () => {
         title="Excluir Estágio"
         message={`Tem certeza que deseja excluir o estágio "${stageToDelete?.name}"? Esta ação pode afetar OPs que estão atualmente neste estágio.`}
         confirmText="Excluir Estágio"
+      />
+
+      <TrelloSyncModal 
+        isOpen={isSyncModalOpen} 
+        onClose={() => setIsSyncModalOpen(false)} 
       />
     </div>
   );

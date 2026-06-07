@@ -112,7 +112,7 @@ const FichaTecnicaView: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {product.materials.map(pm => (
+                {(product.materials || []).map(pm => (
                   <tr key={pm.id}>
                     <td className="p-3 border border-dark-bg/20 text-sm font-medium">{pm.material.name}</td>
                     <td className="p-3 border border-dark-bg/20 text-sm text-center font-bold">
@@ -120,7 +120,7 @@ const FichaTecnicaView: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {product.materials.length === 0 && (
+                {(product.materials || []).length === 0 && (
                   <tr>
                     <td colSpan={2} className="p-4 border border-dark-bg/20 text-center text-sm italic text-dark-bg/60">
                       Nenhum insumo cadastrado para este modelo.
