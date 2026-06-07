@@ -167,7 +167,20 @@ async def create_order(
         size_grade=order_in.size_grade,
         observations=order_in.observations,
         nf_number=order_in.nf_number,
-        nf_date=order_in.nf_date
+        nf_date=order_in.nf_date,
+        fabric_description=order_in.fabric_description,
+        risk_release_date=order_in.risk_release_date,
+        photo_url=order_in.photo_url,
+        items=order_in.items,
+        fabric_quantity_mts=order_in.fabric_quantity_mts,
+        interfacing_quantity_mts=order_in.interfacing_quantity_mts,
+        lining_quantity_mts=order_in.lining_quantity_mts,
+        cutting_start=order_in.cutting_start,
+        cutting_end=order_in.cutting_end,
+        gluing_start=order_in.gluing_start,
+        gluing_end=order_in.gluing_end,
+        cut_separator_name=order_in.cut_separator_name,
+        batidas_count=order_in.batidas_count
     )
     db.add(new_order)
     await db.flush() # Flush to get ID if needed, though not strictly needed here

@@ -295,10 +295,26 @@ export default function MobileDashboard() {
         {/* CORTE SETOR */}
         {selectedDept === 'Corte' && (
           <div className="space-y-6">
+            <button 
+              onClick={() => navigate('/mobile/cutting')}
+              className="w-full bg-gradient-to-br from-pink-500/20 to-rose-600/20 border border-pink-500/40 hover:border-pink-500 p-5 rounded-2xl flex items-center justify-between text-left group transition-all duration-300"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center group-hover:scale-110 transition-all">
+                  <Scissors size={32} weight="bold" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-white">Controle de Rendimento</h3>
+                  <p className="text-sm text-pink-200/70 mt-0.5">Apontar batidas e uso de tecido</p>
+                </div>
+              </div>
+              <ArrowRight size={24} className="text-pink-400 group-hover:text-white transition-colors" />
+            </button>
+
             {/* active corte orders */}
             <div className="bg-dark-card border border-dark-border/50 rounded-2xl p-5 shadow-xl">
               <h2 className="font-outfit font-bold text-base mb-4 flex items-center gap-2">
-                <Scissors size={20} className="text-pink-400" />
+                <Kanban size={20} className="text-pink-400" />
                 Ordens na Fila de Corte ({deptOrders.length})
               </h2>
 

@@ -11,6 +11,7 @@ import MobileDispatch from './pages/MobileDispatch';
 import MobileReceive from './pages/MobileReceive';
 import MobileScheduling from './pages/MobileScheduling';
 import MobileQrScanner from './pages/MobileQrScanner';
+import MobileCutting from './pages/MobileCutting';
 
 import BackofficeDashboard from './pages/BackofficeDashboard';
 import LicenseLockScreen from './pages/LicenseLockScreen';
@@ -63,6 +64,7 @@ function AppContent() {
             <Route path="/mobile/recebimento" element={<MobileReceive />} />
             <Route path="/mobile/scheduling" element={<MobileScheduling />} />
             <Route path="/mobile/scanner" element={<MobileQrScanner />} />
+            <Route path="/mobile/cutting" element={<MobileCutting />} />
           </Route>
 
           {/* Public Routes */}

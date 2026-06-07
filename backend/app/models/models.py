@@ -31,6 +31,7 @@ class ProductionStage(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
 
     name: Mapped[str] = mapped_column(String(50))
+    macro_stage: Mapped[str] = mapped_column(String(50), default="Produção")
     order: Mapped[int] = mapped_column(Integer)  # Para ordenação
 
     tenant: Mapped["Tenant"] = relationship(back_populates="production_stages")
@@ -87,7 +88,7 @@ class ProductionOrder(Base):
     # CORRIGIDO: era Integer, o que truncava valores decimais como R$ 12,50 → 12
     price_per_piece: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), default=0)
     current_stage: Mapped[str] = mapped_column(String(50), default="Corte")
-    status: Mapped[str] = mapped_column(String(50), default="em_andamento")
+    status: Mapped[str] = mapped_column(String(50), default="na_fila")
     nf_number: Mapped[Optional[str]] = mapped_column(String(100))
     nf_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
@@ -95,6 +96,32 @@ class ProductionOrder(Base):
     collection: Mapped[Optional[str]] = mapped_column(String(100))
     size_grade: Mapped[Optional[dict]] = mapped_column(JSON)  # {"PP": 10, "P": 20...}
     observations: Mapped[Optional[str]] = mapped_column(Text)
+
+    # Novos campos: Cabeçalho
+    fabric_description: Mapped[Optional[str]] = mapped_column(String(255))
+    risk_release_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    photo_url: Mapped[Optional[str]] = mapped_column(String(1000))
+    shipping_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    launch_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    
+    # Integração Trello
+    trims: Mapped[Optional[str]] = mapped_column(Text)
+    modeling_notes: Mapped[Optional[str]] = mapped_column(Text)
+    attachments: Mapped[Optional[list]] = mapped_column(JSON) # Lista de dicts: {"name": "...", "url": "..."}
+
+    # Múltiplos Itens (Modelos)
+    items: Mapped[Optional[list]] = mapped_column(JSON) # [{"name", "color", "difficulty", "sizes": {"PP": 1}, "total": 1}]
+
+    # Novos campos: Controle de Corte
+    fabric_quantity_mts: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
+    interfacing_quantity_mts: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
+    lining_quantity_mts: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
+    cutting_start: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    cutting_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    gluing_start: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    gluing_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    cut_separator_name: Mapped[Optional[str]] = mapped_column(String(255))
+    batidas_count: Mapped[Optional[int]] = mapped_column(Integer)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now_utc)
 

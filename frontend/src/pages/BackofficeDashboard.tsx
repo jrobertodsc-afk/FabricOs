@@ -457,7 +457,8 @@ const BackofficeDashboard: React.FC = () => {
                                   updateClientLicense(client.tenant_id, { 
                                     trial_ends_at: currentEndsAt.toISOString(),
                                     plan: 'trial',
-                                    payment_status: 'trial'
+                                    payment_status: 'trial',
+                                    is_active: true
                                   }).then(u => {
                                     setClients(prev => prev.map(c => c.tenant_id === client.tenant_id ? u : c));
                                     alert("Trial estendido com sucesso para " + currentEndsAt.toLocaleDateString('pt-BR') + "!");

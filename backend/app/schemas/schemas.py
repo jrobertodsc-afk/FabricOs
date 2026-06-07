@@ -16,6 +16,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 class ProductionStageBase(BaseModel):
     name: str
+    macro_stage: str = "Produção"
     order: int
 
 class ProductionStageCreate(ProductionStageBase):
@@ -139,6 +140,9 @@ class ProductBase(BaseModel):
     type: str = "produto_acabado"
     base_price: Optional[float] = 0
     image_url: Optional[str] = None
+    trims: Optional[str] = None
+    modeling_notes: Optional[str] = None
+    attachments: Optional[list] = None
 
 class ProductCreate(ProductBase):
     materials: List[ProductMaterialBase]
@@ -152,6 +156,9 @@ class ProductUpdate(BaseModel):
     base_price: Optional[float] = None
     materials: Optional[List[ProductMaterialBase]] = None
     image_url: Optional[str] = None
+    trims: Optional[str] = None
+    modeling_notes: Optional[str] = None
+    attachments: Optional[list] = None
 
 class Product(ProductBase):
     model_config = ConfigDict(from_attributes=True)
@@ -199,6 +206,32 @@ class ProductionOrderBase(BaseModel):
     observations: Optional[str] = None
     nf_number: Optional[str] = None
     nf_date: Optional[datetime] = None
+    
+    # Novos campos: Cabeçalho
+    fabric_description: Optional[str] = None
+    risk_release_date: Optional[datetime] = None
+    photo_url: Optional[str] = None
+    shipping_date: Optional[datetime] = None
+    launch_date: Optional[datetime] = None
+    
+    # Integração Trello
+    trims: Optional[str] = None
+    modeling_notes: Optional[str] = None
+    attachments: Optional[list] = None
+
+    # Múltiplos Itens (Modelos)
+    items: Optional[list] = None
+
+    # Novos campos: Controle de Corte
+    fabric_quantity_mts: Optional[float] = None
+    interfacing_quantity_mts: Optional[float] = None
+    lining_quantity_mts: Optional[float] = None
+    cutting_start: Optional[datetime] = None
+    cutting_end: Optional[datetime] = None
+    gluing_start: Optional[datetime] = None
+    gluing_end: Optional[datetime] = None
+    cut_separator_name: Optional[str] = None
+    batidas_count: Optional[int] = None
 
 class ProductionOrderCreate(ProductionOrderBase):
     pass
@@ -214,6 +247,19 @@ class ProductionOrderUpdate(BaseModel):
     observations: Optional[str] = None
     nf_number: Optional[str] = None
     nf_date: Optional[datetime] = None
+    fabric_description: Optional[str] = None
+    risk_release_date: Optional[datetime] = None
+    photo_url: Optional[str] = None
+    items: Optional[list] = None
+    fabric_quantity_mts: Optional[float] = None
+    interfacing_quantity_mts: Optional[float] = None
+    lining_quantity_mts: Optional[float] = None
+    cutting_start: Optional[datetime] = None
+    cutting_end: Optional[datetime] = None
+    gluing_start: Optional[datetime] = None
+    gluing_end: Optional[datetime] = None
+    cut_separator_name: Optional[str] = None
+    batidas_count: Optional[int] = None
 
 class ProductionOrder(ProductionOrderBase):
     model_config = ConfigDict(from_attributes=True)

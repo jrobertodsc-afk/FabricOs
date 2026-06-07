@@ -1,6 +1,10 @@
 import os
 import re
 import uuid
+import httpx
+import logging
+from typing import Optional, Annotated
+import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,20 +15,27 @@ from loguru import logger
 from backend.app.core.database import get_db, set_tenant_id
 from backend.app.models import models
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_tenant_id
 
 router = APIRouter(prefix="/api/integrations", tags=["Integrations"])
 
 
-async def fetch_trello_card_cover(card_id: str) -> Optional[str]:
+async def fetch_trello_card_details(card_id: str):
     """
-    Consome a API do Trello de forma resiliente para capturar a URL da imagem de capa.
+    Consome a API do Trello de forma resiliente para capturar a URL da imagem de capa, 
+    comentários e lista de anexos.
+    Retorna: (image_url, modeling_notes, attachments_list)
     """
     key = settings.TRELLO_API_KEY
     token = settings.TRELLO_TOKEN
     
+    image_url = None
+    modeling_notes = None
+    attachments_list = []
+    
     if not key or not token:
-        logger.warning("TRELLO_API_KEY ou TRELLO_TOKEN não configurados no arquivo .env. Ignorando captura de imagem de capa.")
-        return None
+        logger.warning("TRELLO_API_KEY ou TRELLO_TOKEN não configurados no arquivo .env. Ignorando captura extra do Trello.")
+        return None, None, None
         
     try:
         async with httpx.AsyncClient() as client:
@@ -33,35 +44,42 @@ async def fetch_trello_card_cover(card_id: str) -> Optional[str]:
             params = {"key": key, "token": token, "fields": "idAttachmentCover"}
             card_res = await client.get(card_url, params=params, timeout=5.0)
             
-            if card_res.status_code != 200:
-                logger.warning(f"Falha ao consultar detalhes do card no Trello. Status: {card_res.status_code}")
-                return None
+            cover_attachment_id = None
+            if card_res.status_code == 200:
+                cover_attachment_id = card_res.json().get("idAttachmentCover")
                 
-            card_data = card_res.json()
-            cover_attachment_id = card_data.get("idAttachmentCover")
-            
-            if not cover_attachment_id:
-                logger.info(f"O card do Trello ({card_id}) não possui imagem de capa definida.")
-                return None
-                
-            # 2. Busca a lista de anexos do cartão para encontrar a URL correspondente ao ID da capa
+            # 2. Busca a lista de anexos do cartão
             attachments_url = f"https://api.trello.com/1/cards/{card_id}/attachments"
-            attachments_params = {"key": key, "token": token}
-            att_res = await client.get(attachments_url, params=attachments_params, timeout=5.0)
+            att_res = await client.get(attachments_url, params={"key": key, "token": token}, timeout=5.0)
             
-            if att_res.status_code != 200:
-                logger.warning(f"Falha ao carregar anexos do Trello. Status: {att_res.status_code}")
-                return None
-                
-            attachments = att_res.json()
-            for attachment in attachments:
-                if attachment.get("id") == cover_attachment_id:
-                    return attachment.get("url")
+            if att_res.status_code == 200:
+                attachments = att_res.json()
+                for attachment in attachments:
+                    att_url = attachment.get("url")
+                    att_name = attachment.get("name")
+                    attachments_list.append({"name": att_name, "url": att_url})
+                    if cover_attachment_id and attachment.get("id") == cover_attachment_id:
+                        image_url = att_url
+                        
+            # 3. Busca os comentários (actions)
+            actions_url = f"https://api.trello.com/1/cards/{card_id}/actions"
+            act_params = {"key": key, "token": token, "filter": "commentCard"}
+            act_res = await client.get(actions_url, params=act_params, timeout=5.0)
+            if act_res.status_code == 200:
+                actions = act_res.json()
+                notes = []
+                for act in actions:
+                    text = act.get("data", {}).get("text", "")
+                    date_str = act.get("date", "")[:10]  # yyyy-mm-dd
+                    if text:
+                        notes.append(f"[{date_str}] {text}")
+                if notes:
+                    modeling_notes = "\n\n".join(notes)
                     
     except Exception as e:
         logger.error(f"Erro ao interagir com a API do Trello: {e}")
         
-    return None
+    return image_url, modeling_notes, attachments_list
 
 
 @router.head("/trello")
@@ -146,8 +164,15 @@ async def trello_webhook_handler(
     prod_res = await db.execute(prod_query)
     product = prod_res.scalar_one_or_none()
 
-    # Busca a imagem de capa via Trello attachments API
-    image_url = await fetch_trello_card_cover(card_id)
+    # Busca anexos, capa e comentarios via Trello API
+    image_url, modeling_notes, attachments_list = await fetch_trello_card_details(card_id)
+    
+    # Extrai aviamentos da descrição
+    trims = None
+    if card_desc:
+        match = re.search(r'(?i)aviamentos:?\s*(.*?)(?:\n\n|$)', card_desc, re.DOTALL)
+        if match:
+            trims = match.group(1).strip()
 
     if not product:
         short_id = card_short_link.upper() if card_short_link else uuid.uuid4().hex[:6].upper()
@@ -168,17 +193,27 @@ async def trello_webhook_handler(
             reference=reference,
             name=card_name,
             description=card_desc or f"Produto importado automaticamente do Trello (Coluna: {list_after_name})",
-            image_url=image_url
+            image_url=image_url,
+            trims=trims,
+            modeling_notes=modeling_notes,
+            attachments=attachments_list
         )
         db.add(product)
         await db.flush()
         logger.info(f"Produto '{card_name}' criado com sucesso a partir da integração Trello.")
     else:
-        # Caso o produto já exista, apenas atualizamos a imagem/descrição se estiverem vazios no banco
+        # Caso o produto já exista, apenas atualizamos se estiverem vazios no banco
         if card_desc and not product.description:
             product.description = card_desc
         if image_url:
             product.image_url = image_url
+        if trims and not product.trims:
+            product.trims = trims
+        if modeling_notes and not product.modeling_notes:
+            product.modeling_notes = modeling_notes
+        if attachments_list and not product.attachments:
+            product.attachments = attachments_list
+            
         await db.flush()
         logger.info(f"Reutilizando produto existente '{card_name}' no FabricOS.")
 
@@ -435,3 +470,148 @@ async def delete_trello_webhook(
             raise HTTPException(status_code=500, detail=f"Erro ao conectar com o Trello: {str(e)}")
             
     return {"status": "success", "message": "Quadro desvinculado com sucesso!"}
+
+@router.post("/trello/sync-history")
+async def sync_trello_history(
+    request: Request,
+    tenant_id: Annotated[uuid.UUID, Depends(get_current_tenant_id)],
+    db: AsyncSession = Depends(get_db)
+):
+    from dotenv import dotenv_values
+    import asyncio
+    
+    env_path = "backend/.env"
+    if not os.path.exists(env_path):
+        env_path = ".env"
+        
+    config_dict = {}
+    if os.path.exists(env_path):
+        config_dict = dotenv_values(env_path)
+        
+    api_key = config_dict.get("TRELLO_API_KEY") or getattr(settings, "TRELLO_API_KEY", "") or ""
+    token = config_dict.get("TRELLO_TOKEN") or getattr(settings, "TRELLO_TOKEN", "") or ""
+    
+    if not api_key or not token:
+        raise HTTPException(status_code=400, detail="Chave de API e Token não configurados.")
+        
+    try:
+        payload = await request.json()
+        target_list_name = payload.get("list_name", "APROVADAS").upper()
+        board_id = payload.get("board_id") 
+    except Exception:
+        target_list_name = "APROVADAS"
+        board_id = None
+        
+    await set_tenant_id(db, str(tenant_id))
+    
+    active_boards = []
+    async with httpx.AsyncClient() as client:
+        if board_id:
+            active_boards.append(board_id)
+        else:
+            webhooks_url = f"https://api.trello.com/1/tokens/{token}/webhooks"
+            res = await client.get(webhooks_url, params={"key": api_key, "token": token}, timeout=5.0)
+            if res.status_code == 200:
+                for wh in res.json():
+                    if "/api/integrations/trello" in wh.get("callbackURL", "") and wh.get("active", True):
+                        active_boards.append(wh.get("idModel"))
+                        
+        if not active_boards:
+             raise HTTPException(status_code=400, detail="Nenhum quadro configurado ou ativo para sincronização.")
+             
+        synced_products = []
+        
+        for b_id in active_boards:
+            lists_url = f"https://api.trello.com/1/boards/{b_id}/lists"
+            res_lists = await client.get(lists_url, params={"key": api_key, "token": token}, timeout=10.0)
+            if res_lists.status_code != 200:
+                continue
+                
+            target_list_id = None
+            for lst in res_lists.json():
+                if target_list_name in lst.get("name", "").upper():
+                    target_list_id = lst.get("id")
+                    break
+                    
+            if not target_list_id:
+                continue
+                
+            cards_url = f"https://api.trello.com/1/lists/{target_list_id}/cards"
+            res_cards = await client.get(cards_url, params={"key": api_key, "token": token}, timeout=10.0)
+            if res_cards.status_code != 200:
+                continue
+                
+            cards = res_cards.json()
+            
+            for card in cards:
+                card_id = card.get("id")
+                card_name = card.get("name")
+                card_desc = card.get("desc", "")
+                card_short_link = card.get("shortLink")
+                
+                image_url, modeling_notes, attachments_list = await fetch_trello_card_details(card_id)
+                
+                trims = None
+                if card_desc:
+                    match = re.search(r'(?i)aviamentos:?\s*(.*?)(?:\n\n|$)', card_desc, re.DOTALL)
+                    if match:
+                        trims = match.group(1).strip()
+                        
+                prod_query = select(models.Product).where(
+                    models.Product.name == card_name,
+                    models.Product.tenant_id == tenant_id
+                )
+                prod_res = await db.execute(prod_query)
+                product = prod_res.scalar_one_or_none()
+                
+                if not product:
+                    short_id = card_short_link.upper() if card_short_link else uuid.uuid4().hex[:6].upper()
+                    reference = f"TR-{short_id}"
+                    
+                    # Checagem extra de ref unica (simplificada)
+                    ref_check_query = select(models.Product).where(
+                        models.Product.reference == reference,
+                        models.Product.tenant_id == tenant_id
+                    )
+                    if (await db.execute(ref_check_query)).scalar_one_or_none():
+                        reference = f"TR-{short_id}-{uuid.uuid4().hex[:4].upper()}"
+
+                    product = models.Product(
+                        id=uuid.uuid4(),
+                        tenant_id=tenant_id,
+                        reference=reference,
+                        name=card_name,
+                        description=card_desc or f"Produto importado em lote do Trello",
+                        image_url=image_url,
+                        trims=trims,
+                        modeling_notes=modeling_notes,
+                        attachments=attachments_list,
+                        price_per_piece=0.0
+                    )
+                    db.add(product)
+                else:
+                    if card_desc and not product.description:
+                        product.description = card_desc
+                    if image_url:
+                        product.image_url = image_url
+                    if trims and not product.trims:
+                        product.trims = trims
+                    if modeling_notes and not product.modeling_notes:
+                        product.modeling_notes = modeling_notes
+                    if attachments_list and not product.attachments:
+                        product.attachments = attachments_list
+                        
+                await db.flush()
+                
+                synced_products.append({
+                    "id": str(product.id),
+                    "name": product.name,
+                    "reference": product.reference,
+                    "image_url": product.image_url,
+                    "trims": product.trims,
+                    "family": "Trello Import",
+                    "estimated_cost": float(getattr(product, "price_per_piece", 0.0) or 0.0)
+                })
+                
+        await db.commit()
+        return {"status": "success", "synced_count": len(synced_products), "products": synced_products}
