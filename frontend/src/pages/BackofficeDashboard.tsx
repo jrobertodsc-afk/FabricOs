@@ -446,7 +446,7 @@ const BackofficeDashboard: React.FC = () => {
                           </select>
                         </div>
                         
-                        {client.plan === 'trial' && (
+                        {(client.plan === 'trial' || client.payment_status === 'trial') && (
                           <div className="pt-2 border-t border-dark-border/30">
                             <button 
                               onClick={() => {
@@ -455,7 +455,9 @@ const BackofficeDashboard: React.FC = () => {
                                   currentEndsAt.setDate(currentEndsAt.getDate() + 15);
                                   
                                   updateClientLicense(client.tenant_id, { 
-                                    trial_ends_at: currentEndsAt.toISOString() 
+                                    trial_ends_at: currentEndsAt.toISOString(),
+                                    plan: 'trial',
+                                    payment_status: 'trial'
                                   }).then(u => {
                                     setClients(prev => prev.map(c => c.tenant_id === client.tenant_id ? u : c));
                                     alert("Trial estendido com sucesso para " + currentEndsAt.toLocaleDateString('pt-BR') + "!");
