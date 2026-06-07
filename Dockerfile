@@ -42,4 +42,4 @@ ENV FABRICOS_MODE=backoffice
 EXPOSE 8000
 
 # Comando para rodar a aplicacao (Railway usa porta dinamica por isso nao passamos --port chumbado no CMD, o Railway cuida disso caso use a variavel PORT, mas vamos usar a configuracao dinamica)
-CMD ["sh", "-c", "uvicorn backend.app.api.backoffice_server:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
