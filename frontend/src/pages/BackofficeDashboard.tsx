@@ -445,6 +445,37 @@ const BackofficeDashboard: React.FC = () => {
                             <option value="cancelled">❌ Cancelado</option>
                           </select>
                         </div>
+                        
+                        {client.plan === 'trial' && (
+                          <div className="pt-2 border-t border-dark-border/30">
+                            <button 
+                              onClick={() => {
+                                if (confirm("Deseja estender o trial deste cliente por mais 15 dias?")) {
+                                  const currentEndsAt = client.trial_ends_at ? new Date(client.trial_ends_at) : new Date();
+                                  currentEndsAt.setDate(currentEndsAt.getDate() + 15);
+                                  
+                                  updateClientLicense(client.tenant_id, { 
+                                    trial_ends_at: currentEndsAt.toISOString() 
+                                  }).then(u => {
+                                    setClients(prev => prev.map(c => c.tenant_id === client.tenant_id ? u : c));
+                                    alert("Trial estendido com sucesso para " + currentEndsAt.toLocaleDateString('pt-BR') + "!");
+                                  }).catch(e => {
+                                    console.error(e);
+                                    alert("Erro ao estender trial.");
+                                  });
+                                }
+                              }}
+                              className="w-full text-center text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 py-1.5 rounded-lg hover:bg-primary/20 transition-all">
+                              Estender Trial (+15 dias)
+                            </button>
+                            {client.trial_ends_at && (
+                              <p className="text-center text-[9px] text-dark-dim mt-1.5">
+                                Vence em: {new Date(client.trial_ends_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                       </div>
                     </div>
 

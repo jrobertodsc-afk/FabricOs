@@ -215,6 +215,7 @@ class LicenseUpdateRequest(BaseModel):
     payment_status: Optional[str] = None
     next_billing_date: Optional[str] = None
     monthly_price: Optional[float] = None
+    trial_ends_at: Optional[str] = None
 
 class CreateClientRequest(BaseModel):
     client_name: str
@@ -498,6 +499,8 @@ async def update_client_license(tenant_id: str, payload: LicenseUpdateRequest, a
         state["next_billing_date"] = payload.next_billing_date
     if payload.monthly_price is not None:
         state["monthly_price"] = payload.monthly_price
+    if payload.trial_ends_at is not None:
+        state["trial_ends_at"] = payload.trial_ends_at
         
     save_central_db(db_data)
     return state

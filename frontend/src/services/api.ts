@@ -173,6 +173,24 @@ export interface ProductionOrder {
   observations?: string;
   nf_number?: string;
   nf_date?: string;
+  fabric_description?: string;
+  risk_release_date?: string;
+  photo_url?: string;
+  shipping_date?: string;
+  launch_date?: string;
+  trims?: string;
+  modeling_notes?: string;
+  attachments?: any[];
+  items?: any[];
+  fabric_quantity_mts?: number;
+  interfacing_quantity_mts?: number;
+  lining_quantity_mts?: number;
+  cutting_start?: string;
+  cutting_end?: string;
+  gluing_start?: string;
+  gluing_end?: string;
+  cut_separator_name?: string;
+  batidas_count?: number;
   created_at: string;
   product?: Product;
 }
@@ -190,6 +208,24 @@ export interface ProductionOrderCreatePayload {
   observations?: string;
   nf_number?: string;
   nf_date?: string;
+  fabric_description?: string;
+  risk_release_date?: string;
+  photo_url?: string;
+  shipping_date?: string;
+  launch_date?: string;
+  trims?: string;
+  modeling_notes?: string;
+  attachments?: any[];
+  items?: any[];
+  fabric_quantity_mts?: number;
+  interfacing_quantity_mts?: number;
+  lining_quantity_mts?: number;
+  cutting_start?: string;
+  cutting_end?: string;
+  gluing_start?: string;
+  gluing_end?: string;
+  cut_separator_name?: string;
+  batidas_count?: number;
 }
 
 export interface ProductionOrderUpdatePayload {
@@ -203,6 +239,21 @@ export interface ProductionOrderUpdatePayload {
   observations?: string;
   nf_number?: string;
   nf_date?: string;
+  fabric_description?: string;
+  risk_release_date?: string;
+  photo_url?: string;
+  shipping_date?: string;
+  launch_date?: string;
+  items?: any[];
+  fabric_quantity_mts?: number;
+  interfacing_quantity_mts?: number;
+  lining_quantity_mts?: number;
+  cutting_start?: string;
+  cutting_end?: string;
+  gluing_start?: string;
+  gluing_end?: string;
+  cut_separator_name?: string;
+  batidas_count?: number;
 }
 
 // ---- Materials & Products ----
@@ -244,9 +295,12 @@ export interface Product {
   name: string;
   description?: string;
   type: string;
-  base_price: number;
-  materials: ProductMaterial[];
+  base_price?: number;
   image_url?: string;
+  trims?: string;
+  modeling_notes?: string;
+  attachments?: any[];
+  materials?: ProductMaterial[];
   created_at: string;
 }
 
@@ -258,6 +312,9 @@ export interface ProductCreatePayload {
   base_price?: number;
   materials: { material_id: string; quantity: number }[];
   image_url?: string;
+  trims?: string;
+  modeling_notes?: string;
+  attachments?: any[];
   initial_stock?: Record<string, number>;
 }
 
@@ -269,12 +326,16 @@ export interface ProductUpdatePayload {
   base_price?: number;
   materials?: { material_id: string; quantity: number }[];
   image_url?: string;
+  trims?: string;
+  modeling_notes?: string;
+  attachments?: any[];
 }
 
 // ---- Production Stages ----
 export interface ProductionStage {
   id: string;
   name: string;
+  macro_stage: string;
   order: number;
 }
 
@@ -508,7 +569,7 @@ export const getFinancialSummary = async () => {
 };
 
 export const syncSystem = async () => {
-  const response = await api.post('/api/system/sync');
+  const response = await api.post('/api/integrations/trello/sync-history');
   return response.data;
 };
 
@@ -1070,6 +1131,7 @@ export const updateClientLicense = async (tenantId: string, data: {
   payment_status?: string;
   next_billing_date?: string;
   monthly_price?: number;
+  trial_ends_at?: string;
 }) => {
   const response = await api.patch<BackofficeClient>(`/api/backoffice/clients/${tenantId}`, data, getBackofficeHeaders());
   return response.data;
