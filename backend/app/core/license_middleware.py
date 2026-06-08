@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Annotated, List, Optional
-import requests
+import httpx
 
 from backend.app.core.database import get_db, set_tenant_id
 from backend.app.models import models
@@ -85,14 +85,15 @@ async def ping_central_backoffice(db: AsyncSession, config: models.LicenseConfig
     try:
         # Simula chamada HTTP de verificação para o nosso Backoffice
         # Passa o UUID e a chave criptográfica atual para conferência
-        response = requests.post(
-            f"{CENTRAL_BACKOFFICE_URL}/license/validate",
-            json={
-                "tenant_id": str(config.tenant_id),
-                "license_key": config.license_key
-            },
-            timeout=2.0 # Timeout rápido para não prender a resposta local
-        )
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{CENTRAL_BACKOFFICE_URL}/license/validate",
+                json={
+                    "tenant_id": str(config.tenant_id),
+                    "license_key": config.license_key
+                },
+                timeout=5.0 # Timeout ampliado para Railway
+            )
         
         if response.status_code == 200:
             data = response.json()
